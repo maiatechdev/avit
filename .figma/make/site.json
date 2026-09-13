@@ -1,0 +1,11 @@
+{
+  "title": "AVIT",
+  "description": "This educational app enhances classroom learning for Brazilian high school students by guiding them through interactive, AI-mediated activities that promote critical thinking.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
