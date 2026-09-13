@@ -35,7 +35,10 @@ function Shell({ children }: { children: React.ReactNode }) {
 
 // ── Screen 0: Intro / Splash ──────────────────────────────────────────────────
 
-const DEMO_VIDEO_URL = "/assets/video-demo.mp4";
+// Servido direto do GitHub (media LFS endpoint) — o Vercel não baixa objetos
+// Git LFS durante o build, então o caminho local /assets/... serviria só o
+// ponteiro do LFS, não o vídeo de verdade.
+const DEMO_VIDEO_URL = "https://media.githubusercontent.com/media/maiatechdev/avit/main/public/assets/video-demo.mp4";
 
 function Intro() {
   return (

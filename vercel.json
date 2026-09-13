@@ -1,3 +1,0 @@
-{
-  "installCommand": "git lfs pull && npm install"
-}
