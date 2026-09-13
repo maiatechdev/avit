@@ -1,4 +1,4 @@
-# [NOME DO PROJETO] 🔆
+# AVIT 🔆
 
 > Transformando o celular de distração em ferramenta de aprendizagem — dentro da janela que a lei já permite.
 
