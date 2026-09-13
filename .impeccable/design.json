@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-13T00:00:00.000Z",
+  "title": "Design System: AVIT",
+  "extensions": {
+    "colorMeta": {
+      "terracota-argila": {
+        "role": "primary",
+        "displayName": "Terracota Argila",
+        "canonical": "#D96B38",
+        "tonalRamp": ["#3D1A0C", "#66290F", "#963A15", "#C94E1F", "#D96B38", "#E58A5E", "#F1B99C", "#FCEFE7"]
+      },
+      "verde-agua-sereno": {
+        "role": "secondary",
+        "displayName": "Verde-Água Sereno",
+        "canonical": "#3EA89A",
+        "tonalRamp": ["#0D2B27", "#164A43", "#21695F", "#2D8879", "#3EA89A", "#66BBB0", "#A3D8D0", "#E4F6F3"]
+      },
+      "indigo-pensativo": {
+        "role": "tertiary",
+        "displayName": "Índigo Pensativo",
+        "canonical": "#656CC7",
+        "tonalRamp": ["#171933", "#262A57", "#363C82", "#4C53A8", "#656CC7", "#8489D3", "#B4B8E7", "#EDEEFA"]
+      },
+      "ink-brown": {
+        "role": "neutral",
+        "displayName": "Marrom Tinta",
+        "canonical": "#2A1F10",
+        "tonalRamp": ["#2A1F10", "#46331C", "#634829", "#815E38", "#9F7750", "#BC9670", "#DDC3A3", "#F5EDE1"]
+      },
+      "paper-cream": {
+        "role": "neutral",
+        "displayName": "Creme Papel",
+        "canonical": "#FDFAF5",
+        "tonalRamp": ["#3A2E1D", "#5C4B30", "#7F6845", "#A48A62", "#C7AF87", "#E1D2B4", "#F3EBDA", "#FDFAF5"]
+      },
+      "ambar-curiosidade": { "role": "tertiary", "displayName": "Âmbar Curiosidade", "canonical": "#F59E0B" },
+      "violeta-parceria": { "role": "tertiary", "displayName": "Violeta Parceria", "canonical": "#8B5CF6" },
+      "lilas-competencia": { "role": "tertiary", "displayName": "Lilás Competência", "canonical": "#A07CC5" },
+      "verde-vinculo": { "role": "tertiary", "displayName": "Verde Vínculo", "canonical": "#4BAA6E" },
+      "verde-confirmacao": { "role": "tertiary", "displayName": "Verde Confirmação", "canonical": "#3D9A5C" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Título de tela, uma vez por tela, no topo." },
+      "title": { "displayName": "Title", "purpose": "Título de seção dentro de uma tela." },
+      "body": { "displayName": "Body", "purpose": "Parágrafos, mensagens de chat, descrições." },
+      "label": { "displayName": "Label", "purpose": "Rótulos curtos em maiúsculas escritas no texto, não via CSS." }
+    },
+    "shadows": [
+      { "name": "ambiente-cartao", "value": "0 1px 4px rgba(0,0,0,0.07)", "purpose": "Cartões brancos sobre o fundo creme (métricas, QR code, bolhas de chat da IA)." },
+      { "name": "flutuante", "value": "0 4px 24px rgba(0,0,0,0.18)", "purpose": "Barra de navegação inferior, o único elemento verdadeiramente flutuante." },
+      { "name": "casca-app", "value": "0 0 60px rgba(0,0,0,0.08)", "purpose": "Moldura ambiente ao redor de toda a aplicação, simulando o aparelho." }
+    ],
+    "motion": [
+      { "name": "bounce-tatil", "value": "cubic-bezier(0.34, 1.56, 0.64, 1)", "purpose": "Easing elástico de toque em botões (.btn-bounce) e chips/itens secundários (.tap-scale) — personalidade tátil e brincalhona, proposital." },
+      { "name": "screen-enter", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Transição de entrada de tela: fade + slide-up de 12px em 0.28s." }
+    ],
+    "breakpoints": []
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "CTA principal, largura cheia, com mordida elástica ao toque.",
+      "html": "<button class=\"ds-btn-primary\">Ativar sessão pra turma</button>",
+      "css": ".ds-btn-primary { width: 100%; padding: 16px 24px; border: none; border-radius: 16px; background: #D96B38; color: #FFFFFF; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 16px; letter-spacing: 0.01em; cursor: pointer; transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s ease; } .ds-btn-primary:hover { background: #c85f30; } .ds-btn-primary:focus-visible { outline: 2px solid #D96B38; outline-offset: 2px; } .ds-btn-primary:active { transform: scale(0.94); } .ds-btn-primary:disabled { background: #F2EBE0; color: #8A7460; cursor: not-allowed; }"
+    },
+    {
+      "name": "Chip (Selected/Unselected)",
+      "kind": "chip",
+      "refersTo": "chip-selected",
+      "description": "Pill de seleção usada em duração de foco e reflexão; estado selecionado troca de cor por completo.",
+      "html": "<button class=\"ds-chip ds-chip--selected\">20 min</button>",
+      "css": ".ds-chip { padding: 10px 16px; border: none; border-radius: 9999px; font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 14px; cursor: pointer; background: #F2EBE0; color: #2A1F10; transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1); } .ds-chip:hover { filter: brightness(0.97); } .ds-chip:focus-visible { outline: 2px solid #656CC7; outline-offset: 2px; } .ds-chip:active { transform: scale(0.95); } .ds-chip--selected { background: #656CC7; color: #FFFFFF; }"
+    },
+    {
+      "name": "Card (métrica)",
+      "kind": "card",
+      "refersTo": "card-surface",
+      "description": "Cartão de superfície branca sobre o fundo creme, usado para métricas e conteúdo agrupado.",
+      "html": "<div class=\"ds-card\"><p class=\"ds-card__label\">ENGAJAMENTO</p><p class=\"ds-card__value\">81%</p></div>",
+      "css": ".ds-card { background: #FFFFFF; border-radius: 16px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); font-family: 'Outfit', sans-serif; } .ds-card__label { font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 12px; color: #8A7460; margin: 0 0 8px; } .ds-card__value { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 28px; color: #D96B38; margin: 0; }"
+    },
+    {
+      "name": "Toggle Switch",
+      "kind": "custom",
+      "description": "Switch em pill com thumb deslizante em easing elástico; usado no Modo Foco.",
+      "html": "<button role=\"switch\" aria-checked=\"true\" class=\"ds-toggle ds-toggle--on\"><span class=\"ds-toggle__thumb\"></span></button>",
+      "css": ".ds-toggle { width: 56px; height: 32px; border-radius: 9999px; border: none; background: #E8DDD0; position: relative; cursor: pointer; transition: background 0.25s; padding: 0; } .ds-toggle--on { background: #656CC7; } .ds-toggle__thumb { position: absolute; top: 4px; left: 4px; width: 24px; height: 24px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 1px 4px rgba(0,0,0,0.2); transition: left 0.22s cubic-bezier(0.4,0,0.2,1); display: block; } .ds-toggle--on .ds-toggle__thumb { left: 28px; } .ds-toggle:focus-visible { outline: 2px solid #656CC7; outline-offset: 2px; }"
+    },
+    {
+      "name": "Chat Bubble — IA",
+      "kind": "custom",
+      "description": "Bolha de mensagem da IA com avatar Spark; raio assimétrico apontando para a origem (esquerda).",
+      "html": "<div class=\"ds-chat-row\"><div class=\"ds-chat-avatar\"><svg viewBox=\"0 0 20 20\" width=\"14\" height=\"14\"><path d=\"M10 1 L11.9 8.1 L19 10 L11.9 11.9 L10 19 L8.1 11.9 L1 10 L8.1 8.1 Z\" fill=\"#FFFFFF\"/></svg></div><div class=\"ds-chat-bubble ds-chat-bubble--ai\">Oi! O que você já sabe sobre o assunto?</div></div>",
+      "css": ".ds-chat-row { display: flex; align-items: flex-end; gap: 8px; } .ds-chat-avatar { width: 32px; height: 32px; border-radius: 50%; background: #656CC7; display: flex; align-items: center; justify-content: center; flex-shrink: 0; } .ds-chat-bubble { max-width: 78%; padding: 12px 16px; font-family: 'Outfit', sans-serif; font-size: 14px; line-height: 1.6; box-shadow: 0 1px 3px rgba(0,0,0,0.07); } .ds-chat-bubble--ai { background: #FFFFFF; color: #2A1F10; border-radius: 4px 18px 18px 18px; }"
+    },
+    {
+      "name": "Chat Bubble — Aluno",
+      "kind": "custom",
+      "description": "Bolha de mensagem do aluno, alinhada à direita, sem avatar; raio assimétrico espelhado.",
+      "html": "<div class=\"ds-chat-bubble ds-chat-bubble--student\">Sei que o planeta tá aquecendo por causa dos gases.</div>",
+      "css": ".ds-chat-bubble--student { background: #D96B38; color: #FFFFFF; border-radius: 18px 4px 18px 18px; padding: 12px 16px; font-family: 'Outfit', sans-serif; font-size: 14px; line-height: 1.6; box-shadow: 0 1px 3px rgba(0,0,0,0.07); max-width: 78%; margin-left: auto; }"
+    },
+    {
+      "name": "Path Card",
+      "kind": "card",
+      "description": "Cartão ilustrado de trilha (Investigar/Criar/Resolver/Colaborar); borda colorida indica seleção, não preenchimento.",
+      "html": "<button class=\"ds-path-card ds-path-card--selected\"><div class=\"ds-path-card__art\"></div><div class=\"ds-path-card__body\"><p class=\"ds-path-card__title\">Investigar</p><p class=\"ds-path-card__desc\">Pesquisar e comparar fontes</p></div></button>",
+      "css": ".ds-path-card { display: flex; flex-direction: column; border-radius: 16px; overflow: hidden; text-align: left; border: 2px solid transparent; background: #FFFFFF; box-shadow: 0 1px 5px rgba(0,0,0,0.07); cursor: pointer; padding: 0; transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1); } .ds-path-card:active { transform: scale(0.97); } .ds-path-card--selected { background: #FFFBEB; border-color: #F59E0B; box-shadow: none; } .ds-path-card__art { width: 100%; height: 76px; background: #FEF3C7; } .ds-path-card__body { padding: 8px 12px 12px; } .ds-path-card__title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px; color: #2A1F10; margin: 0 0 2px; } .ds-path-card__desc { font-family: 'Outfit', sans-serif; font-size: 12px; line-height: 1.3; color: #8A7460; margin: 0; }"
+    },
+    {
+      "name": "Floating Nav Dock (protótipo)",
+      "kind": "nav",
+      "description": "Barra flutuante escura na base da tela. No build atual funciona como navegador de telas do protótipo, não navegação real de produto — documentado apenas pela linguagem visual (pill escura translúcida com blur).",
+      "html": "<nav class=\"ds-nav\"><button class=\"ds-nav__item ds-nav__item--active\">Ativar</button><button class=\"ds-nav__item\">Caminhos</button></nav>",
+      "css": ".ds-nav { display: inline-flex; align-items: center; gap: 2px; padding: 8px; border-radius: 16px; background: rgba(42,31,16,0.92); backdrop-filter: blur(12px); box-shadow: 0 4px 24px rgba(0,0,0,0.18); } .ds-nav__item { padding: 6px 10px; border-radius: 12px; border: none; background: transparent; color: rgba(255,255,255,0.5); font-family: 'Nunito', sans-serif; font-weight: 600; font-size: 12px; cursor: pointer; transition: background 0.15s, color 0.15s; } .ds-nav__item--active { background: #D96B38; color: #FFFFFF; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "A Trilha de Aprendizagem",
+    "overview": "Todo aluno caminha até o mesmo destino — o objetivo que o professor definiu — mas cada um escolhe sua própria trilha para chegar lá. Essa ideia de \"mesmo destino, caminhos diferentes\" não é só um conceito de produto: ela é o princípio que organiza o sistema visual inteiro. Cada trilha (Investigar, Criar, Resolver, Colaborar) tem sua própria cor e sua própria ilustração, mas todas vivem dentro da mesma paleta terrosa e quente, no mesmo grid de cantos arredondados, com a mesma tipografia — variação dentro de uma identidade única, nunca fragmentação.\n\nA superfície é calorosa e tátil, pensada para adolescentes em sala de aula: fundo em creme de papel, acentos em terracota e verde-água, ilustrações planas e geométricas sem rosto nem expressão (o \"Spark\" — uma faísca de 4 pontas — representa a IA sem antropomorfizá-la). O movimento é propositalmente brincalhão: botões e chips reagem ao toque com uma leve \"mordida\" elástica, reforçando que isso é um ambiente de aprendizagem ativa, não um painel administrativo frio.\n\nUma única cor — o índigo \"Pensativo\" — está reservada exclusivamente para tudo que vem da IA (avatar do chat, modo foco, insight do painel). Ela nunca aparece em navegação, botões de ação do produto ou branding; é um código de cor que o aluno aprende a reconhecer: quando aparece índigo, é a IA falando.",
+    "keyCharacteristics": [
+      "Paleta terrosa e quente (creme, terracota, areia) com dois acentos de \"ação\" (terracota) e \"reflexão/sucesso\" (verde-água) claramente distintos.",
+      "Uma cor reservada exclusivamente para presença da IA (índigo), nunca reutilizada para outra função.",
+      "Cada uma das 4 trilhas de aprendizagem tem identidade cromática própria, mas dentro da mesma família tonal pastel.",
+      "Geometria arredondada e suave em todos os níveis — do raio dos cartões ao formato das bolhas de chat.",
+      "Motion tátil e brincalhão: toques respondem com uma leve saliência elástica, não com feedback neutro/corporativo."
+    ],
+    "rules": [
+      { "name": "A Regra da Cor Única da IA", "body": "Índigo Pensativo (#656CC7) só pode representar a IA. Se um elemento não é gerado ou mediado pela IA, ele não pode usar essa cor.", "section": "colors" },
+      { "name": "A Regra do Verde Duplicado (pendência a resolver)", "body": "Verde Vínculo (#4BAA6E) e Verde Confirmação (#3D9A5C) são dois verdes de sucesso quase idênticos e não relacionados por token. Até serem unificados, trate-os como papéis diferentes e não adicione um terceiro verde.", "section": "colors" },
+      { "name": "A Regra do Rótulo Falado", "body": "Textos de rótulo são escritos em maiúsculas diretamente na string em português, não via text-transform.", "section": "typography" },
+      { "name": "A Regra do Cartão sem Sombra", "body": "Um bloco colorido sobre um fundo já tonal não recebe sombra — a mudança de cor já comunica a camada.", "section": "elevation" },
+      { "name": "A Regra do Canto Cortado", "body": "Qualquer bolha de conversa usa o raio assimétrico 4px/18px apontando para quem enviou a mensagem, em vez de uma seta literal.", "section": "shapes" }
+    ],
+    "dos": [
+      "Do reservar Índigo Pensativo (#656CC7) exclusivamente para elementos gerados ou mediados pela IA.",
+      "Do manter o motion tátil e brincalhão (.btn-bounce/.tap-scale com easing elástico) como personalidade proposital do sistema.",
+      "Do usar o raio assimétrico 4px/18px em qualquer bolha de conversa nova.",
+      "Do dar a cada nova trilha ou categoria sua própria cor de acento dentro da mesma família tonal pastel.",
+      "Do escrever rótulos em maiúsculas diretamente no texto em português, não via text-transform: uppercase."
+    ],
+    "donts": [
+      "Don't usar Índigo Pensativo fora do contexto de IA.",
+      "Don't introduzir um terceiro verde de sucesso; unifique Verde Vínculo e Verde Confirmação antes de adicionar qualquer novo tom de verde.",
+      "Don't adicionar sombra a um bloco colorido que já está sobre um fundo tonal.",
+      "Don't animar max-height ou width para efeitos de revelação/progresso — prefira transform/opacity ou grid-template-rows.",
+      "Don't confundir a barra de navegação inferior (hoje um navegador de telas do protótipo) com a navegação real do produto."
+    ]
+  }
+}
