@@ -50,13 +50,13 @@ function Intro() {
         className="relative w-full flex flex-col min-h-[100svh] items-center"
         style={{ maxWidth: 430 }}
       >
-        {/* Logo centered */}
-        <div className="flex-1 flex flex-col items-center justify-center px-8 gap-8">
+        {/* Logo + slogan */}
+        <div className="flex flex-col items-center px-8 gap-4 pt-10 pb-2">
           <img
             src={logoAvit}
             alt="AVIT"
             className="w-full object-contain"
-            style={{ maxWidth: 300 }}
+            style={{ maxWidth: 180 }}
           />
 
           {/* Slogan */}
@@ -65,7 +65,7 @@ function Intro() {
             style={{
               color: "white",
               fontFamily: "Nunito, sans-serif",
-              fontSize: "clamp(15px, 4.2vw, 18px)",
+              fontSize: "clamp(14px, 3.8vw, 17px)",
               letterSpacing: "0.04em",
               textShadow: "0 1px 4px rgba(0,0,0,0.12)",
             }}
@@ -74,22 +74,20 @@ function Intro() {
           </p>
         </div>
 
-        {/* CTA section */}
-        <div className="w-full px-6 pb-12 pt-4 flex flex-col gap-4">
-          <a
-            href={DEMO_VIDEO_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn-bounce w-full py-4 text-base font-extrabold rounded-2xl text-center"
-            style={{
-              background: "white",
-              color: "var(--primary)",
-              fontFamily: "Nunito, sans-serif",
-              letterSpacing: "0.01em",
-            }}
-          >
-            Ver vídeo
-          </a>
+        {/* Vídeo embutido */}
+        <div className="flex-1 w-full flex items-center justify-center px-6 py-4">
+          <video
+            controls
+            playsInline
+            preload="metadata"
+            className="w-full rounded-2xl"
+            style={{ maxHeight: "52vh", background: "#000", boxShadow: "0 4px 24px rgba(0,0,0,0.18)" }}
+            src={DEMO_VIDEO_URL}
+          />
+        </div>
+
+        {/* Rodapé legal */}
+        <div className="w-full px-6 pb-10 pt-2 flex flex-col gap-2">
           <p
             className="text-center text-xs"
             style={{ color: "rgba(255,255,255,0.6)", fontFamily: "Outfit, sans-serif" }}
