@@ -35,7 +35,9 @@ function Shell({ children }: { children: React.ReactNode }) {
 
 // ── Screen 0: Intro / Splash ──────────────────────────────────────────────────
 
-function Intro({ onEnter }: { onEnter: () => void }) {
+const DEMO_VIDEO_URL = "/assets/video-demo.mp4";
+
+function Intro() {
   return (
     <div
       className="min-h-screen flex items-start justify-center"
@@ -71,9 +73,11 @@ function Intro({ onEnter }: { onEnter: () => void }) {
 
         {/* CTA section */}
         <div className="w-full px-6 pb-12 pt-4 flex flex-col gap-4">
-          <button
-            onClick={onEnter}
-            className="btn-bounce w-full py-4 text-base font-extrabold rounded-2xl"
+          <a
+            href={DEMO_VIDEO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-bounce w-full py-4 text-base font-extrabold rounded-2xl text-center"
             style={{
               background: "white",
               color: "var(--primary)",
@@ -81,8 +85,8 @@ function Intro({ onEnter }: { onEnter: () => void }) {
               letterSpacing: "0.01em",
             }}
           >
-            Entrar no app
-          </button>
+            Ver vídeo
+          </a>
           <p
             className="text-center text-xs"
             style={{ color: "rgba(255,255,255,0.6)", fontFamily: "Outfit, sans-serif" }}
@@ -919,7 +923,7 @@ export default function App() {
 
   return (
     <div className="relative">
-      {screen === "intro"              && <Intro onEnter={() => go("teacher-activate")} />}
+      {screen === "intro"              && <Intro />}
       {screen === "teacher-activate"   && <TeacherActivate onActivate={() => go("teacher-activated")} />}
       {screen === "teacher-activated"  && <TeacherActivated onViewDashboard={() => go("teacher-dashboard")} />}
       {screen === "student-paths"      && <StudentPaths onChoose={handleChoosePath} />}
