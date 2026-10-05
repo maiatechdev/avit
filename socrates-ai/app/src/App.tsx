@@ -386,7 +386,7 @@ function TeacherActivated({ onViewDashboard }: { onViewDashboard: () => void }) 
             <div style={{ width: 192, height: 192, borderRadius: 16, display: "grid", gridTemplateColumns: "repeat(10, 1fr)", gridTemplateRows: "repeat(10, 1fr)", gap: 2, padding: 8, background: "#FAFAFA" }}>
               {Array.from({ length: 100 }).map((_, i) => {
                 const corners = [0,1,2,3,10,11,12,20,21,22,7,8,9,17,18,19,27,28,29,70,71,72,80,81,82,90,91,92,77,78,79,87,88,89,97,98,99];
-                const fill = corners.includes(i) || Math.random() > 0.55;
+                const fill = corners.includes(i) || (i * 7919) % 100 > 45;
                 return <div key={i} className="rounded-sm" style={{ background: fill ? "#2A1F10" : "transparent" }} />;
               })}
             </div>
@@ -585,7 +585,6 @@ function StudentChat({ path, focusActive: initFocus, focusSecs: initSecs, onFini
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [input, setInput] = useState("");
   const [level, setLevel] = useState(2);
-  const [showFinish, setShowFinish] = useState(false);
   const [focusOn, setFocusOn] = useState(initFocus);
   const [secsLeft, setSecsLeft] = useState(initSecs);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -598,7 +597,7 @@ function StudentChat({ path, focusActive: initFocus, focusSecs: initSecs, onFini
   }, []);
 
   useEffect(() => {
-    if (!focusOn || secsLeft <= 0) return;
+    if (!focusOn) return;
     timerRef.current = setInterval(() => {
       setSecsLeft((s) => { if (s <= 1) { stopFocus(); return 0; } return s - 1; });
     }, 1000);
@@ -608,7 +607,7 @@ function StudentChat({ path, focusActive: initFocus, focusSecs: initSecs, onFini
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
   // Só libera "Concluí o desafio" quando o raciocínio atinge o nível 3 — não na primeira resposta da IA.
-  useEffect(() => { if (level >= 3) setShowFinish(true); }, [level]);
+  const showFinish = level >= 3;
 
   const handleSend = () => {
     if (!input.trim()) return;
@@ -724,7 +723,10 @@ function StudentReflection({ onSend }: { onSend: () => void }) {
   const [submitted, setSubmitted] = useState(false);
 
   const toggleHelped = (h: string) => setHelped((prev) => {
-    const next = new Set(prev); next.has(h) ? next.delete(h) : next.add(h); return next;
+    const next = new Set(prev);
+    if (next.has(h)) next.delete(h);
+    else next.add(h);
+    return next;
   });
 
   const handleSubmit = () => {
