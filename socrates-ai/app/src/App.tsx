@@ -1,4 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { Shell } from "./components/Shell";
+import { QuestionBubble, Toggle, Confetti } from "./components/primitives";
+import { SceneInvestigar, SceneCriar, SceneResolver, SceneColaborar, SceneReflection } from "./components/scenes";
+import type { Session, Path, Message, DashboardData } from "./shared/contracts";
+import { apiCreateSession, apiJoinSession, postJson, getRequest } from "./api/client";
 import logoSocratesAi from "@/imports/logoSocratesAi.svg";
 
 type Screen =
@@ -13,42 +18,11 @@ type Screen =
   | "student-reflection"
   | "teacher-dashboard";
 
-type Session = { id: string; code: string; objective: string };
-
-async function apiCreateSession(objective: string): Promise<Session> {
-  const res = await fetch("/api/sessions", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ objective }) });
-  if (!res.ok) throw new Error(`sessions ${res.status}`);
-  return (await res.json()) as Session;
-}
-
-async function apiJoinSession(code: string): Promise<{ id: string; objective: string }> {
-  const res = await fetch("/api/sessions/join", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ code }) });
-  if (res.status === 404) throw new Error("not_found");
-  if (!res.ok) throw new Error(`join ${res.status}`);
-  return (await res.json()) as { id: string; objective: string };
-}
-
-type Path = "investigar" | "criar" | "resolver" | "colaborar" | null;
-interface Message { role: "ai" | "student"; text: string; }
-
 function fmt(s: number) {
   return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 }
 
 // ── Design primitives ─────────────────────────────────────────────────────────
-
-function Shell({ children, wide = false }: { children: React.ReactNode; wide?: boolean }) {
-  return (
-    <div className="min-h-screen w-full" style={{ background: "var(--background)" }}>
-      <div
-        className={`relative w-full mx-auto flex flex-col ${wide ? "" : "max-w-3xl"}`}
-        style={{ minHeight: "100svh" }}
-      >
-        {children}
-      </div>
-    </div>
-  );
-}
 
 // ── Screen 0: Intro / Splash ──────────────────────────────────────────────────
 
@@ -115,139 +89,6 @@ function Intro({ onEnter, onStudent }: { onEnter: () => void; onStudent: () => v
         </div>
       </div>
     </div>
-  );
-}
-
-/** Balão de pergunta da logo: a voz do tutor socrático */
-function QuestionBubble({ size = 16, color = "currentColor" }: { size?: number; color?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ width: size, height: size, display: "block", flexShrink: 0 }}>
-      <path d="M4 5h16a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-8l-4 3v-3H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" />
-      <path d="M9.6 9.2a2.4 2.4 0 1 1 3.4 2.2c-.7.3-1 .8-1 1.5" />
-      <circle cx="12" cy="14.6" r="0.6" fill={color} stroke="none" />
-    </svg>
-  );
-}
-
-function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <button role="switch" aria-checked={on} onClick={() => onChange(!on)} className="tap-scale shrink-0"
-      style={{ width: 56, height: 32, borderRadius: 999, background: on ? "var(--ai)" : "var(--border)", border: "none", cursor: "pointer", transition: "background 0.25s", position: "relative" }}>
-      <span style={{ position: "absolute", top: 4, left: on ? 28 : 4, width: 24, height: 24, borderRadius: "50%", background: "white", boxShadow: "0 1px 4px rgba(0,0,0,0.2)", transition: "left 0.22s cubic-bezier(.4,0,.2,1)", display: "block" }} />
-    </button>
-  );
-}
-
-// ── Confetti (only used on challenge completion) ──────────────────────────────
-
-function Confetti({ active }: { active: boolean }) {
-  if (!active) return null;
-  const palette = ["#2F6BE8", "#F5B82E", "#FF7A59", "#2FB67C", "#8E6CFF", "#6C8CFF"];
-  return (
-    <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 300, overflow: "hidden" }}>
-      {Array.from({ length: 28 }).map((_, i) => {
-        const x = 5 + (i / 28) * 90;
-        const color = palette[i % palette.length];
-        const size = 7 + (i % 4) * 2;
-        const delay = (i % 7) * 0.045;
-        const dur = 0.8 + (i % 5) * 0.1;
-        const shape = i % 3;
-        return (
-          <div key={i} style={{
-            position: "absolute", bottom: "25%", left: `${x}%`,
-            width: size, height: shape === 1 ? size * 0.55 : size,
-            borderRadius: shape === 0 ? "50%" : shape === 1 ? "2px" : "3px",
-            background: color,
-            transform: shape === 2 ? "rotate(45deg)" : "none",
-            animation: `confettiBurst ${dur}s ${delay}s ease-out forwards`,
-            opacity: 0,
-          }} />
-        );
-      })}
-    </div>
-  );
-}
-
-// ── Cartoon illustrations (estilo da logo: traço marinho forte, cores vivas) ──
-
-const INK = "#142463";
-const SKIN = "#F4B183";
-
-function CartoonFigure({ x, y, shirt = "#2F6BE8", hair = "#142463" }: { x: number; y: number; shirt?: string; hair?: string }) {
-  return (
-    <g transform={`translate(${x} ${y})`} strokeLinejoin="round" strokeLinecap="round">
-      <path d="M-17 46 Q-17 24 0 24 Q17 24 17 46 Z" fill={shirt} stroke={INK} strokeWidth="3" />
-      <rect x="-5" y="15" width="10" height="11" rx="3" fill={SKIN} stroke={INK} strokeWidth="2.5" />
-      <circle cx="0" cy="0" r="13" fill={SKIN} stroke={INK} strokeWidth="3" />
-      <path d="M-13.5 -1 Q-15 -17 0 -16 Q15 -17 13.5 -1 Q8 -8 0 -8 Q-8 -8 -13.5 -1 Z" fill={hair} stroke={INK} strokeWidth="2.5" />
-      <circle cx="-4.8" cy="2" r="1.9" fill={INK} />
-      <circle cx="4.8" cy="2" r="1.9" fill={INK} />
-      <path d="M-4 7 Q0 10.5 4 7" fill="none" stroke={INK} strokeWidth="2.2" />
-    </g>
-  );
-}
-
-function SceneInvestigar() {
-  return (
-    <svg viewBox="0 0 120 90" className="w-full h-full">
-      <rect width="120" height="90" fill="#FFF3C4" />
-      <CartoonFigure x={38} y={44} />
-      <circle cx="84" cy="40" r="15" fill="#D6ECFF" stroke={INK} strokeWidth="3" />
-      <path d="M77 40h14M77 46h9" stroke={INK} strokeWidth="2.4" strokeLinecap="round" />
-      <path d="M93 52 L106 66" stroke="#F5B82E" strokeWidth="6" strokeLinecap="round" />
-      <path d="M93 52 L106 66" stroke={INK} strokeWidth="1.6" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function SceneCriar() {
-  return (
-    <svg viewBox="0 0 120 90" className="w-full h-full">
-      <rect width="120" height="90" fill="#FFE3DA" />
-      <CartoonFigure x={36} y={44} shirt="#FF7A59" />
-      <rect x="62" y="32" width="38" height="26" rx="8" fill="#2F6BE8" stroke={INK} strokeWidth="3" />
-      <rect x="72" y="26" width="12" height="8" rx="3" fill="#2F6BE8" stroke={INK} strokeWidth="2.5" />
-      <circle cx="81" cy="45" r="7" fill="#D6ECFF" stroke={INK} strokeWidth="2.5" />
-      <path d="M100 18 L102 23 L107 25 L102 27 L100 32 L98 27 L93 25 L98 23 Z" fill="#F5B82E" stroke={INK} strokeWidth="2" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function SceneResolver() {
-  return (
-    <svg viewBox="0 0 120 90" className="w-full h-full">
-      <rect width="120" height="90" fill="#DDF6EA" />
-      <CartoonFigure x={36} y={44} shirt="#2FB67C" />
-      <circle cx="84" cy="34" r="14" fill="#FFE58A" stroke={INK} strokeWidth="3" />
-      <rect x="77" y="46" width="14" height="9" rx="3" fill="#6C8CFF" stroke={INK} strokeWidth="2.5" />
-      <path d="M84 12 V7 M66 24 L62 20 M102 24 L106 20" stroke={INK} strokeWidth="2.6" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function SceneColaborar() {
-  return (
-    <svg viewBox="0 0 120 90" className="w-full h-full">
-      <rect width="120" height="90" fill="#EDE7FF" />
-      <CartoonFigure x={30} y={46} />
-      <CartoonFigure x={90} y={46} shirt="#8E6CFF" />
-      <rect x="46" y="8" width="28" height="18" rx="8" fill="#FFFFFF" stroke={INK} strokeWidth="3" />
-      <path d="M52 26 L56 26 L52 31 Z" fill="#FFFFFF" stroke={INK} strokeWidth="2.5" strokeLinejoin="round" />
-      <text x="60" y="22" textAnchor="middle" fontFamily="Nunito, sans-serif" fontWeight="800" fontSize="13" fill={INK}>?</text>
-    </svg>
-  );
-}
-
-function SceneReflection() {
-  return (
-    <svg viewBox="0 0 320 90" className="w-full">
-      <rect width="320" height="90" fill="#FFF1C7" />
-      <CartoonFigure x={130} y={50} shirt="#FF7A59" />
-      <rect x="186" y="6" width="90" height="42" rx="18" fill="#FFFFFF" stroke={INK} strokeWidth="3" />
-      <circle cx="200" cy="50" r="3.5" fill="#FFFFFF" stroke={INK} strokeWidth="2.2" />
-      <circle cx="194" cy="56" r="2" fill="#FFFFFF" stroke={INK} strokeWidth="2" />
-      <path d="M205 27 L214 36 L232 17" fill="none" stroke="#2FB67C" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
   );
 }
 
@@ -517,11 +358,7 @@ function StudentCheckin({ sessionId, onDone }: { sessionId: string; onDone: (mis
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch("/api/checkins", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ sessionId, participantId: participantIdentifier(), ...answers }),
-      });
+      const res = await postJson("/api/checkins", { sessionId, participantId: participantIdentifier(), ...answers });
       if (!res.ok) throw new Error(String(res.status));
       const data = (await res.json()) as { mission: string };
       onDone(data.mission);
@@ -815,11 +652,7 @@ function StudentChat({ sessionId, mission, path, focusActive: initFocus, focusSe
     setInput("");
     setSending(true);
     try {
-      const res = await fetch("/api/tutor/turn", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ sessionId, exerciseId: EXERCISE_ID, message: text }),
-      });
+      const res = await postJson("/api/tutor/turn", { sessionId, exerciseId: EXERCISE_ID, message: text });
       if (!res.ok) throw new Error(`tutor ${res.status}`);
       const data = (await res.json()) as { action: string; resposta_ao_aluno: string };
       setMessages((p) => [...p, { role: "ai", text: data.resposta_ao_aluno }]);
@@ -1041,17 +874,6 @@ function StudentReflection({ onSend }: { onSend: () => void }) {
 // ── Screen 7: Teacher Dashboard ───────────────────────────────────────────────
 
 
-type DashboardData = {
-  students: number;
-  engagement: number;
-  autonomy: number;
-  competence: number;
-  bond: number;
-  pathCounts: Record<string, number>;
-  stuckShare: number;
-  suggestion: string;
-};
-
 function TeacherDashboard({ session, onBack }: { session: Session | null; onBack: () => void }) {
   const [data, setData] = useState<DashboardData | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "empty" | "error">("loading");
@@ -1059,7 +881,7 @@ function TeacherDashboard({ session, onBack }: { session: Session | null; onBack
   useEffect(() => {
     if (!session) return;
     let cancelled = false;
-    fetch(`/api/dashboard?sessionId=${encodeURIComponent(session.id)}`)
+    getRequest(`/api/dashboard?sessionId=${encodeURIComponent(session.id)}`)
       .then((res) => {
         if (!res.ok) throw new Error(String(res.status));
         return res.json() as Promise<DashboardData>;
@@ -1214,11 +1036,7 @@ export default function App() {
   const handleChoosePath = (p: Path) => {
     setPath(p);
     if (session) {
-      fetch("/api/participations", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ sessionId: session.id, participantId: participantIdentifier(), path: p }),
-      }).catch(() => undefined);
+      postJson("/api/participations", { sessionId: session.id, participantId: participantIdentifier(), path: p }).catch(() => undefined);
     }
     go("student-focus");
   };
