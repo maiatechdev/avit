@@ -380,8 +380,8 @@ function StudentPaths({ onChoose }: { onChoose: (path: Path) => void }) {
   const [selected, setSelected] = useState<Path>(null);
 
   return (
-    <Shell>
-      <div className="screen-enter flex flex-col min-h-[100svh] px-5 pt-6 pb-24">
+    <Shell wide>
+      <div className="screen-enter flex flex-col min-h-[100svh] px-5 pt-6 pb-24 lg:px-12 lg:pt-12 lg:mx-auto lg:max-w-6xl lg:w-full">
         {/* Objective banner */}
         <div className="rounded-2xl px-4 py-3 mb-5 flex items-start gap-3" style={{ background: "var(--muted)" }}>
           <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 mt-0.5 shrink-0">
@@ -420,7 +420,7 @@ function StudentPaths({ onChoose }: { onChoose: (path: Path) => void }) {
               vectorEffect="non-scaling-stroke"
             />
           </svg>
-          <div className="relative grid grid-cols-2 gap-4 py-2">
+          <div className="relative grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 py-2">
             {PATHS.map((p, index) => {
               const active = selected === p.id;
               return (
@@ -441,7 +441,7 @@ function StudentPaths({ onChoose }: { onChoose: (path: Path) => void }) {
                   >
                     {index + 1}
                   </span>
-                  <div className="w-full h-[84px] overflow-hidden">
+                  <div className="w-full h-[84px] lg:h-[170px] overflow-hidden">
                     <p.Scene />
                   </div>
                   <div className="px-3 pt-2 pb-3">
@@ -489,8 +489,9 @@ function StudentFocus({ onContinue }: { onContinue: (active: boolean, secs: numb
   const [selectedSecs, setSelectedSecs] = useState(1200);
 
   return (
-    <Shell>
-      <div className="screen-enter flex flex-col min-h-[100svh] px-5 pt-10 pb-24">
+    <Shell wide>
+      <div className="screen-enter flex flex-col min-h-[100svh] px-5 pt-10 pb-24 lg:px-16 lg:pt-20 lg:mx-auto lg:max-w-6xl lg:w-full lg:grid lg:grid-cols-2 lg:gap-20 lg:items-center">
+        <div className="lg:flex lg:flex-col">
         <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6"
           style={{ background: enabled ? "var(--ai-muted)" : "var(--muted)", transition: "background 0.3s" }}>
           <svg viewBox="0 0 24 24" fill="none" stroke={enabled ? "var(--ai)" : "var(--muted-foreground)"}
@@ -506,6 +507,8 @@ function StudentFocus({ onContinue }: { onContinue: (active: boolean, secs: numb
           Você pode ativar ou pular — a escolha é sua.
         </p>
 
+        </div>
+        <div className="flex flex-col flex-1">
         <div className="flex items-center justify-between px-5 py-4 rounded-2xl mb-2"
           style={{ background: "var(--card)", border: `1.5px solid ${enabled ? "rgba(101,108,199,0.4)" : "var(--border)"}`, transition: "border-color 0.25s" }}>
           <div>
@@ -552,6 +555,7 @@ function StudentFocus({ onContinue }: { onContinue: (active: boolean, secs: numb
           style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}>
           Continuar
         </button>
+        </div>
       </div>
     </Shell>
   );
@@ -622,8 +626,9 @@ function StudentChat({ path, focusActive: initFocus, focusSecs: initSecs, onFini
   };
 
   return (
-    <Shell>
-      <div className="screen-enter flex flex-col h-[100svh]">
+    <Shell wide>
+      <div className="screen-enter flex flex-col lg:flex-row h-[100svh]">
+        <div className="flex flex-col flex-1 min-w-0 min-h-0 lg:mx-auto lg:max-w-3xl lg:w-full">
         {/* Header */}
         <div className="px-5 pt-5 pb-4 flex flex-col gap-3" style={{ background: "var(--card)", borderBottom: "1px solid var(--border)" }}>
           <div className="flex items-center justify-between">
@@ -683,7 +688,7 @@ function StudentChat({ path, focusActive: initFocus, focusSecs: initSecs, onFini
         </div>
 
         {/* Input bar */}
-        <div className="px-4 pt-3 pb-24 flex flex-col gap-2" style={{ background: "var(--card)", borderTop: "1px solid var(--border)" }}>
+        <div className="px-4 pt-3 pb-24 lg:pb-6 flex flex-col gap-2" style={{ background: "var(--card)", borderTop: "1px solid var(--border)" }}>
           {showFinish && (
             <button onClick={onFinish} className="btn-bounce w-full py-3 text-sm font-bold rounded-xl"
               style={{ background: "var(--secondary)", color: "var(--secondary-foreground)", border: "2px solid var(--border)" }}>
@@ -705,6 +710,32 @@ function StudentChat({ path, focusActive: initFocus, focusSecs: initSecs, onFini
             </button>
           </div>
         </div>
+        </div>
+        <aside className="hidden lg:flex flex-col gap-5 w-96 shrink-0 p-8" style={{ background: "var(--card)", borderLeft: "2px solid var(--border)" }}>
+          <div className="cartoon-card p-5">
+            <p className="text-xs font-extrabold mb-1" style={{ color: "var(--muted-foreground)" }}>TRILHA</p>
+            <p className="text-lg font-extrabold" style={{ color: "var(--foreground)" }}>{pathLabel}</p>
+          </div>
+          <div className="cartoon-card p-5">
+            <p className="text-xs font-extrabold mb-1" style={{ color: "var(--muted-foreground)" }}>EXERCÍCIO DE HOJE</p>
+            <p className="text-base font-bold" style={{ color: "var(--foreground)" }}>Se f(x) = 2x + 3, quanto vale f(4)?</p>
+          </div>
+          <div className="cartoon-card p-5">
+            <p className="text-xs font-extrabold mb-3" style={{ color: "var(--muted-foreground)" }}>NÍVEL DE RACIOCÍNIO</p>
+            <div className="flex gap-3">
+              {[1, 2, 3].map((n) => (
+                <span key={n} className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-extrabold"
+                  style={{ background: n <= level ? "var(--accent)" : "var(--muted)", color: "var(--foreground)", border: "2px solid var(--border)" }}>{n}</span>
+              ))}
+            </div>
+          </div>
+          {focusOn && (
+            <div className="cartoon-card p-5">
+              <p className="text-xs font-extrabold mb-1" style={{ color: "var(--muted-foreground)" }}>MODO FOCO</p>
+              <p className="text-lg font-extrabold" style={{ color: "var(--ai)" }}>{fmt(secsLeft)}</p>
+            </div>
+          )}
+        </aside>
       </div>
     </Shell>
   );
@@ -739,16 +770,16 @@ function StudentReflection({ onSend }: { onSend: () => void }) {
   };
 
   return (
-    <Shell>
+    <Shell wide>
       <Confetti active={submitted} />
-      <div className="screen-enter flex flex-col min-h-[100svh] pb-24">
+      <div className="screen-enter flex flex-col min-h-[100svh] pb-24 lg:pb-16 lg:grid lg:grid-cols-2 lg:gap-12 lg:items-center lg:mx-auto lg:max-w-6xl lg:w-full lg:px-12">
         {/* Illustration banner */}
         <div className="overflow-hidden" style={{ borderRadius: "0 0 24px 24px" }}>
           <SceneReflection />
         </div>
 
-        <div className="px-5 pt-5 flex-1 flex flex-col">
-          <h1 className="text-2xl font-extrabold mb-1">
+        <div className="px-5 pt-5 flex-1 flex flex-col lg:px-0 lg:pt-0">
+          <h1 className="text-2xl lg:text-4xl font-extrabold mb-1">
             {submitted ? "Boa! Você mandou bem 🎉" : "Como você se sentiu?"}
           </h1>
           <p className="text-sm mb-6" style={{ color: "var(--muted-foreground)" }}>
