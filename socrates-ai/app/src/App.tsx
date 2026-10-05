@@ -20,12 +20,12 @@ function fmt(s: number) {
 
 // ── Design primitives ─────────────────────────────────────────────────────────
 
-function Shell({ children }: { children: React.ReactNode }) {
+function Shell({ children, wide = false }: { children: React.ReactNode; wide?: boolean }) {
   return (
     <div className="min-h-screen flex items-start justify-center" style={{ background: "var(--background)" }}>
       <div
         className="relative w-full flex flex-col"
-        style={{ maxWidth: 430, minHeight: "100svh", background: "var(--background)", boxShadow: "0 0 60px rgba(0,0,0,0.08)" }}
+        style={{ maxWidth: wide ? 1120 : 430, minHeight: "100svh", background: "var(--background)", boxShadow: "0 0 60px rgba(0,0,0,0.08)" }}
       >
         {children}
       </div>
@@ -233,8 +233,8 @@ function SceneReflection() {
 function TeacherActivate({ onActivate }: { onActivate: () => void }) {
   const [objective, setObjective] = useState("");
   return (
-    <Shell>
-      <div className="screen-enter flex flex-col min-h-[100svh] px-6 pt-6 pb-8">
+    <Shell wide>
+      <div className="screen-enter flex flex-col min-h-[100svh] px-6 pt-6 pb-8 lg:mx-auto lg:max-w-2xl lg:w-full lg:py-12">
         <div className="flex items-center gap-2 self-start mb-8">
           <span className="w-2 h-2 rounded-full block" style={{ background: "var(--ai)" }} />
           <span className="text-xs font-medium" style={{ color: "var(--ai)" }}>
@@ -314,8 +314,8 @@ function TeacherActivate({ onActivate }: { onActivate: () => void }) {
 
 function TeacherActivated({ onViewDashboard }: { onViewDashboard: () => void }) {
   return (
-    <Shell>
-      <div className="screen-enter flex flex-col min-h-[100svh] px-6 pt-6 pb-24">
+    <Shell wide>
+      <div className="screen-enter flex flex-col min-h-[100svh] px-6 pt-6 pb-24 lg:mx-auto lg:max-w-lg lg:w-full lg:py-12">
         <div className="flex items-center gap-2 mb-8">
           <span className="w-2 h-2 rounded-full block" style={{ background: "#2FB67C" }} />
           <span className="text-xs font-medium" style={{ color: "var(--muted-foreground)" }}>Sessão ativa — Lei 15.100/2025</span>
@@ -810,8 +810,8 @@ const METRICS = [
 
 function TeacherDashboard({ onBack }: { onBack: () => void }) {
   return (
-    <Shell>
-      <div className="screen-enter flex flex-col min-h-[100svh] px-5 pt-6 pb-24 overflow-y-auto scrollbar-hide">
+    <Shell wide>
+      <div className="screen-enter flex flex-col min-h-[100svh] px-5 lg:px-10 pt-6 pb-24 overflow-y-auto scrollbar-hide">
         <div className="flex items-center justify-between mb-6">
           <div>
             <p className="text-xs font-semibold mb-0.5" style={{ color: "var(--muted-foreground)" }}>PAINEL DO PROFESSOR</p>
@@ -836,7 +836,7 @@ function TeacherDashboard({ onBack }: { onBack: () => void }) {
         </div>
 
         {/* Metrics */}
-        <div className="grid grid-cols-2 gap-3 mb-5">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
           {METRICS.map((m) => (
             <div key={m.label} className="rounded-2xl p-4 flex flex-col gap-2" style={{ background: "var(--card)", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
               <p className="text-xs font-semibold" style={{ color: "var(--muted-foreground)" }}>{m.label.toUpperCase()}</p>
@@ -849,6 +849,7 @@ function TeacherDashboard({ onBack }: { onBack: () => void }) {
           ))}
         </div>
 
+        <div className="lg:grid lg:grid-cols-2 lg:gap-5 lg:items-start">
         {/* AI insight */}
         <div className="rounded-2xl p-5 flex gap-3 mb-6" style={{ background: "var(--secondary)", border: "2px solid var(--border)" }}>
           <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "var(--ai)" }}>
@@ -879,6 +880,8 @@ function TeacherDashboard({ onBack }: { onBack: () => void }) {
               <p className="text-xs w-8 text-right" style={{ color: "var(--muted-foreground)" }}>{r.pct}%</p>
             </div>
           ))}
+        </div>
+
         </div>
 
         <button onClick={onBack} className="btn-bounce w-full py-4 text-base font-bold rounded-2xl"
