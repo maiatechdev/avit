@@ -88,3 +88,11 @@ Data: 2026-10-05. Método: Impeccable (crítica com agentes isolados de design e
 ## 6. Próximo passo
 
 Nenhuma correção de código foi feita nesta rodada de auditoria. A próxima etapa é aprovar a ordem do plano (seção 5) e as três decisões pendentes.
+
+## 7. Decisões tomadas
+
+1. **Identidade visual: cartoon.** Mantém a linha da logo (traço marinho, cantos arredondados, sombra de adesivo). `DESIGN.md` precisa ser reescrito para refletir isso; a documentação atual (plana, terracota) fica obsoleta.
+2. **Dados reais: não necessários no protótipo.** A demo usa apenas dados fictícios. Isso reduz o risco de LGPD/ECA para a apresentação, mas o identificador persistente do aparelho continua sendo coletado: deve ser removido ou trocado por token de sessão antes de qualquer uso com alunos reais.
+3. **Verificação dos termos do Gemini: pendente.** Enquanto não for verificada, nenhuma mensagem real de aluno deve ser enviada ao Gemini. A integração real fica condicionada a essa verificação (Story 3.3).
+
+**Impacto no plano:** o item P1-3 (privacidade e retenção) cai de prioridade para protótipo, mas o `participantId` persistente continua sendo tratado como dado pessoal. A Story 3.5 (identidade mínima) passa a ser a principal medida de privacidade.
