@@ -122,14 +122,16 @@ As stories serão criadas pelo @sm a partir de cada épico, seguindo o fluxo Sto
 
 ---
 
-## 7. Open Questions (decisões do usuário antes da validação)
+## 7. Decisões confirmadas pelo usuário
 
-1. **Provedor de IA:** Gemini (Google AI Studio), Groq ou OpenRouter? Decisão do @architect com base em limite gratuito e latência.
-2. **Hospedagem do backend:** Vercel (funções serverless) ou outro serviço? O frontend já está no Vercel.
-3. **Conteúdo do piloto de Matemática:** qual tópico do ensino médio será usado na demo?
-4. **Dados na demo:** a demonstração usará dados reais de alunos ou apenas dados fictícios criados pela equipe?
-5. **Público da demo:** só a banca da disciplina ou também alunos reais?
-6. **XP e níveis na demo:** entram com regras completas ou com uma versão simplificada?
+1. **Provedor de IA:** Google Gemini (AI Studio), plano gratuito.
+2. **Hospedagem do backend:** Vercel, com funções serverless, no mesmo projeto do frontend.
+3. **Tópico de Matemática da demo:** funções do 1º grau.
+4. **Dados:** apenas dados fictícios criados pela equipe; nenhum dado pessoal de aluno é coletado.
+5. **Público:** apenas a banca da disciplina; sem alunos usando o app ao vivo.
+6. **XP e níveis:** versão simplificada. Níveis 1/2/3 calculados pelo chat e XP fixo por desafio concluído; sem ofensiva e sem ranking.
+
+Consequências para o escopo: a demo não precisa de carga simultânea nem de termo de consentimento; a política de privacidade continua necessária no app (Epic 4), mas com texto curto.
 
 ---
 
