@@ -4,6 +4,7 @@ import logoSocratesAi from "@/imports/logoSocratesAi.svg";
 type Screen =
   | "intro"
   | "student-join"
+  | "student-checkin"
   | "teacher-activate"
   | "teacher-activated"
   | "student-paths"
@@ -475,6 +476,116 @@ function StudentJoin({ onJoined, onBack }: { onJoined: (session: Session) => voi
   );
 }
 
+const CHECKIN_OPTIONS = {
+  difficulty: [
+    { value: "entendo", label: "Entendo bem" },
+    { value: "duvidas", label: "Tenho dúvidas" },
+    { value: "nao_entendi", label: "Não entendi ainda" },
+  ],
+  time: [
+    { value: "pouco", label: "Pouco (até 10 min)" },
+    { value: "medio", label: "Médio (cerca de 20 min)" },
+    { value: "bastante", label: "Bastante (30 min ou mais)" },
+  ],
+  feeling: [
+    { value: "animado", label: "Animado" },
+    { value: "ok", label: "Tranquilo" },
+    { value: "cansado", label: "Cansado" },
+    { value: "desmotivado", label: "Desmotivado" },
+  ],
+} as const;
+
+function participantIdentifier(): string {
+  try {
+    const stored = localStorage.getItem("socrates-participant");
+    if (stored) return stored;
+    const created = crypto.randomUUID();
+    localStorage.setItem("socrates-participant", created);
+    return created;
+  } catch {
+    return crypto.randomUUID();
+  }
+}
+
+function StudentCheckin({ sessionId, onDone }: { sessionId: string; onDone: (mission: string) => void }) {
+  const [answers, setAnswers] = useState<{ difficulty?: string; time?: string; feeling?: string }>({});
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const complete = Boolean(answers.difficulty && answers.time && answers.feeling);
+
+  const send = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/checkins", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ sessionId, participantId: participantIdentifier(), ...answers }),
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      const data = (await res.json()) as { mission: string };
+      onDone(data.mission);
+    } catch {
+      setError("Não consegui salvar suas respostas. Tente de novo.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const group = (title: string, key: "difficulty" | "time" | "feeling", options: readonly { value: string; label: string }[]) => (
+    <div className="flex flex-col gap-2">
+      <p className="text-xs font-extrabold" style={{ color: "var(--muted-foreground)" }}>{title}</p>
+      <div className="flex flex-wrap gap-2">
+        {options.map((option) => {
+          const active = answers[key] === option.value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              aria-pressed={active}
+              onClick={() => setAnswers((prev) => ({ ...prev, [key]: option.value }))}
+              className="tap-scale px-4 py-2.5 rounded-full text-sm font-bold"
+              style={{
+                background: active ? "var(--primary)" : "var(--card)",
+                color: active ? "#FFFFFF" : "var(--foreground)",
+                border: "2px solid var(--border)",
+                boxShadow: active ? "none" : "0 3px 0 var(--border)",
+              }}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  return (
+    <Shell>
+      <div className="screen-enter flex flex-col min-h-[100svh] px-5 pt-10 pb-24 lg:mx-auto lg:max-w-2xl lg:w-full">
+        <h1 className="text-2xl font-extrabold mb-1" style={{ color: "var(--foreground)" }}>Antes de começar</h1>
+        <p className="text-sm mb-6" style={{ color: "var(--muted-foreground)" }}>
+          Três perguntas rápidas para a sua missão ficar do seu tamanho.
+        </p>
+        <div className="cartoon-card p-5 flex flex-col gap-6">
+          {group("Como você está com o assunto?", "difficulty", CHECKIN_OPTIONS.difficulty)}
+          {group("Quanto tempo você tem hoje?", "time", CHECKIN_OPTIONS.time)}
+          {group("Como você está se sentindo?", "feeling", CHECKIN_OPTIONS.feeling)}
+        </div>
+        {error && <p className="text-sm mt-4" style={{ color: "#B42318" }}>{error}</p>}
+        <button
+          onClick={send}
+          disabled={!complete || busy}
+          className="cartoon-btn w-full py-4 text-base font-extrabold mt-6"
+          style={{ background: complete && !busy ? "var(--primary)" : "var(--muted)", color: complete && !busy ? "#FFFFFF" : "var(--muted-foreground)" }}
+        >
+          {busy ? "Salvando…" : "Continuar"}
+        </button>
+      </div>
+    </Shell>
+  );
+}
+
 function StudentPaths({ objective, onChoose }: { objective: string; onChoose: (path: Path) => void }) {
   const [selected, setSelected] = useState<Path>(null);
 
@@ -663,13 +774,12 @@ function StudentFocus({ onContinue }: { onContinue: (active: boolean, secs: numb
 // ── Screen 5: Student Chat ────────────────────────────────────────────────────
 
 const EXERCISE_ID = "f1-avaliacao-1";
-const OPENING_MESSAGE: Message = {
-  role: "ai",
-  text: "Oi! Vamos pensar juntos. Se f(x) = 2x + 3, quanto vale f(4)? Me conta como você pensaria para resolver.",
-};
+const DEFAULT_MISSION = "Vamos pensar juntos.";
 
-function StudentChat({ sessionId, path, focusActive: initFocus, focusSecs: initSecs, onFinish }: { sessionId: string; path: Path; focusActive: boolean; focusSecs: number; onFinish: () => void }) {
-  const [messages, setMessages] = useState<Message[]>([OPENING_MESSAGE]);
+function StudentChat({ sessionId, mission, path, focusActive: initFocus, focusSecs: initSecs, onFinish }: { sessionId: string; mission: string | null; path: Path; focusActive: boolean; focusSecs: number; onFinish: () => void }) {
+  const [messages, setMessages] = useState<Message[]>([
+    { role: "ai", text: `Oi! ${mission ?? DEFAULT_MISSION} Se f(x) = 2x + 3, quanto vale f(4)? Me conta como você pensaria para resolver.` },
+  ]);
   const [input, setInput] = useState("");
   const [level, setLevel] = useState(1);
   const [sending, setSending] = useState(false);
@@ -1039,6 +1149,7 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>("intro");
   const [path, setPath] = useState<Path>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [mission, setMission] = useState<string | null>(null);
   const [focusActive, setFocusActive] = useState(false);
   const [focusSecs, setFocusSecs] = useState(0);
 
@@ -1059,12 +1170,13 @@ export default function App() {
   return (
     <div className="relative">
       {screen === "intro"              && <Intro onEnter={() => go("teacher-activate")} onStudent={() => go("student-join")} />}
-      {screen === "student-join"       && <StudentJoin onBack={() => go("intro")} onJoined={(s) => { setSession(s); go("student-paths"); }} />}
+      {screen === "student-join"       && <StudentJoin onBack={() => go("intro")} onJoined={(s) => { setSession(s); go("student-checkin"); }} />}
+      {screen === "student-checkin"    && <StudentCheckin sessionId={session?.id ?? ""} onDone={(m) => { setMission(m); go("student-paths"); }} />}
       {screen === "teacher-activate"   && <TeacherActivate onActivate={(s) => { setSession(s); go("teacher-activated"); }} />}
       {screen === "teacher-activated"  && <TeacherActivated session={session} onViewDashboard={() => go("teacher-dashboard")} />}
       {screen === "student-paths"      && <StudentPaths objective={session?.objective ?? "Objetivo ainda não definido"} onChoose={handleChoosePath} />}
       {screen === "student-focus"      && <StudentFocus onContinue={handleFocusContinue} />}
-      {screen === "student-chat"       && <StudentChat sessionId={session?.id ?? "sem-sessao"} path={path} focusActive={focusActive} focusSecs={focusSecs} onFinish={() => go("student-reflection")} />}
+      {screen === "student-chat"       && <StudentChat sessionId={session?.id ?? "sem-sessao"} mission={mission} path={path} focusActive={focusActive} focusSecs={focusSecs} onFinish={() => go("student-reflection")} />}
       {screen === "student-reflection" && <StudentReflection onSend={() => go("teacher-dashboard")} />}
       {screen === "teacher-dashboard"  && <TeacherDashboard onBack={() => go("teacher-activate")} />}
 
