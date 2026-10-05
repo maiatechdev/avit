@@ -2,6 +2,7 @@ import { createNeonAttemptsStore } from "../../lib/tutor/attempts";
 import { StubProvider } from "../../lib/tutor/provider";
 import { GeminiProvider } from "../../lib/tutor/gemini";
 import { runTurn, TutorUnavailableError, UnknownExerciseError } from "../../lib/tutor/turn";
+import { resolveParticipant } from "../../lib/participants/participants";
 
 export const config = { runtime: "edge" };
 
@@ -30,10 +31,10 @@ export default async function handler(request: Request): Promise<Response> {
     return json({ error: "invalid_json" }, 400);
   }
 
-  const { sessionId, participantId, exerciseId, message } = (body ?? {}) as Record<string, unknown>;
+  const { sessionId, participantToken, exerciseId, message } = (body ?? {}) as Record<string, unknown>;
   if (
     !isNonEmptyString(sessionId, 64) ||
-    !isNonEmptyString(participantId, 64) ||
+    !isNonEmptyString(participantToken, 128) ||
     !isNonEmptyString(exerciseId, 64) ||
     !isNonEmptyString(message, 1000)
   ) {
@@ -44,6 +45,9 @@ export default async function handler(request: Request): Promise<Response> {
   if (!databaseUrl) return json({ error: "database_not_configured" }, 503);
 
   try {
+    const participantId = await resolveParticipant(databaseUrl, sessionId, participantToken);
+    if (!participantId) return json({ error: "invalid_participant" }, 401);
+
     const result = await runTurn(
       { sessionId, participantId, exerciseId, message },
       { store: createNeonAttemptsStore(databaseUrl), provider: chooseProvider() },

@@ -1,3 +1,4 @@
+import { hashToken, newToken } from "../auth/tokens";
 import type { Session, SessionsStore } from "./store";
 
 export class SessionNotFoundError extends Error {}
@@ -18,16 +19,19 @@ export function validateObjective(raw: unknown): string | null {
   return text.length >= 3 && text.length <= 140 ? text : null;
 }
 
+// O token do professor é devolvido só aqui, uma vez. O servidor guarda apenas o hash.
 export async function createSession(
   objective: string,
   store: SessionsStore,
   random: () => number = Math.random,
-): Promise<Session> {
+): Promise<Session & { teacherToken: string }> {
   for (let attempt = 0; attempt < 5; attempt++) {
     const code = generateCode(random);
     if (await store.findByCode(code)) continue;
+    const teacherToken = newToken();
     try {
-      return await store.create(objective, code);
+      const session = await store.create(objective, code, await hashToken(teacherToken));
+      return { ...session, teacherToken };
     } catch {
       continue;
     }

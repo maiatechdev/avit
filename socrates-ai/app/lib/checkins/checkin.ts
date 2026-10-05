@@ -8,25 +8,29 @@ export type Difficulty = (typeof DIFFICULTIES)[number];
 export type TimeAvailable = (typeof TIMES)[number];
 export type Feeling = (typeof FEELINGS)[number];
 
-export type Checkin = {
+// O que chega do aluno: o token emitido na entrada, não um identificador escolhido pelo cliente.
+export type CheckinInput = {
   sessionId: string;
-  participantId: string;
+  participantToken: string;
   difficulty: Difficulty;
   time: TimeAvailable;
   feeling: Feeling;
 };
 
+// O que é gravado, depois de o servidor resolver o token para o participante.
+export type Checkin = Omit<CheckinInput, "participantToken"> & { participantId: string };
+
 const isOneOf = <T extends string>(options: readonly T[], value: unknown): value is T =>
   typeof value === "string" && (options as readonly string[]).includes(value);
 
-export function validateCheckin(raw: unknown): Checkin | null {
+export function validateCheckin(raw: unknown): CheckinInput | null {
   if (!raw || typeof raw !== "object") return null;
   const body = raw as Record<string, unknown>;
-  const { sessionId, participantId, difficulty, time, feeling } = body;
+  const { sessionId, participantToken, difficulty, time, feeling } = body;
   if (typeof sessionId !== "string" || sessionId.length === 0 || sessionId.length > 64) return null;
-  if (typeof participantId !== "string" || participantId.length === 0 || participantId.length > 64) return null;
+  if (typeof participantToken !== "string" || participantToken.length === 0 || participantToken.length > 128) return null;
   if (!isOneOf(DIFFICULTIES, difficulty) || !isOneOf(TIMES, time) || !isOneOf(FEELINGS, feeling)) return null;
-  return { sessionId, participantId, difficulty, time, feeling };
+  return { sessionId, participantToken, difficulty, time, feeling };
 }
 
 export function missionFor(checkin: Pick<Checkin, "difficulty" | "time">): string {

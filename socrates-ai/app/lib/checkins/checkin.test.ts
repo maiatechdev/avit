@@ -1,18 +1,22 @@
 import { describe, expect, it } from "vitest";
 import { missionFor, validateCheckin } from "./checkin";
 
-const valid = { sessionId: "s1", participantId: "p1", difficulty: "duvidas", time: "medio", feeling: "ok" };
+const valid = { sessionId: "s1", participantToken: "t1", difficulty: "duvidas", time: "medio", feeling: "ok" };
 
 describe("validateCheckin", () => {
-  it("aceita respostas válidas", () => {
+  it("aceita respostas válidas com token de participante", () => {
     expect(validateCheckin(valid)).toEqual(valid);
+  });
+
+  it("não aceita participantId escolhido pelo cliente", () => {
+    expect(validateCheckin({ ...valid, participantToken: undefined, participantId: "p1" })).toBeNull();
   });
 
   it("rejeita valores fora das opções e campos ausentes", () => {
     expect(validateCheckin({ ...valid, difficulty: "facil" })).toBeNull();
     expect(validateCheckin({ ...valid, time: "1h" })).toBeNull();
     expect(validateCheckin({ ...valid, feeling: "😄" })).toBeNull();
-    expect(validateCheckin({ ...valid, participantId: "" })).toBeNull();
+    expect(validateCheckin({ ...valid, participantToken: "" })).toBeNull();
     expect(validateCheckin(null)).toBeNull();
   });
 

@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 export type Session = { id: string; code: string; objective: string };
 
 export interface SessionsStore {
-  create(objective: string, code: string): Promise<Session>;
+  create(objective: string, code: string, teacherTokenHash: string): Promise<Session>;
   findByCode(code: string): Promise<Session | null>;
 }
 
@@ -17,17 +17,19 @@ export function createNeonSessionsStore(databaseUrl: string): SessionsStore {
         code        TEXT        UNIQUE NOT NULL,
         objective   TEXT        NOT NULL,
         created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
-      )`;
+      )`.then(
+      () => sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS teacher_token_hash TEXT`,
+    );
     return schemaReady;
   };
 
   return {
-    async create(objective, code) {
+    async create(objective, code, teacherTokenHash) {
       await ensureSchema();
       const id = crypto.randomUUID();
       await sql`
-        INSERT INTO sessions (id, code, objective)
-        VALUES (${id}, ${code}, ${objective})`;
+        INSERT INTO sessions (id, code, objective, teacher_token_hash)
+        VALUES (${id}, ${code}, ${objective}, ${teacherTokenHash})`;
       return { id, code, objective };
     },
 

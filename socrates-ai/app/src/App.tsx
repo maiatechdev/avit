@@ -3,7 +3,7 @@ import { Shell } from "./components/Shell";
 import { QuestionBubble, Toggle, Confetti } from "./components/primitives";
 import { SceneInvestigar, SceneCriar, SceneResolver, SceneColaborar, SceneReflection } from "./components/scenes";
 import type { Session, Path, Message, DashboardData } from "./shared/contracts";
-import { apiCreateSession, apiJoinSession, postJson, getRequest } from "./api/client";
+import { apiCreateSession, apiJoinSession, postJson, getRequest, participantTokenFor, teacherTokenFor } from "./api/client";
 import logoSocratesAi from "@/imports/logoSocratesAi.svg";
 
 type Screen =
@@ -336,19 +336,7 @@ const CHECKIN_OPTIONS = {
   ],
 } as const;
 
-function participantIdentifier(): string {
-  try {
-    const stored = localStorage.getItem("socrates-participant");
-    if (stored) return stored;
-    const created = crypto.randomUUID();
-    localStorage.setItem("socrates-participant", created);
-    return created;
-  } catch {
-    return crypto.randomUUID();
-  }
-}
-
-function StudentCheckin({ sessionId, onDone }: { sessionId: string; onDone: (mission: string) => void }) {
+function StudentCheckin({ sessionId, code, onDone }: { sessionId: string; code: string; onDone: (mission: string) => void }) {
   const [answers, setAnswers] = useState<{ difficulty?: string; time?: string; feeling?: string }>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -358,7 +346,7 @@ function StudentCheckin({ sessionId, onDone }: { sessionId: string; onDone: (mis
     setBusy(true);
     setError(null);
     try {
-      const res = await postJson("/api/checkins", { sessionId, participantId: participantIdentifier(), ...answers });
+      const res = await postJson("/api/checkins", { sessionId, participantToken: participantTokenFor(code), ...answers });
       if (!res.ok) throw new Error(String(res.status));
       const data = (await res.json()) as { mission: string };
       onDone(data.mission);
@@ -613,7 +601,7 @@ function StudentFocus({ onContinue }: { onContinue: (active: boolean, secs: numb
 const EXERCISE_ID = "f1-avaliacao-1";
 const DEFAULT_MISSION = "Vamos pensar juntos.";
 
-function StudentChat({ sessionId, mission, path, focusActive: initFocus, focusSecs: initSecs, onFinish }: { sessionId: string; mission: string | null; path: Path; focusActive: boolean; focusSecs: number; onFinish: () => void }) {
+function StudentChat({ sessionId, code, mission, path, focusActive: initFocus, focusSecs: initSecs, onFinish }: { sessionId: string; code: string; mission: string | null; path: Path; focusActive: boolean; focusSecs: number; onFinish: () => void }) {
   const [messages, setMessages] = useState<Message[]>([
     { role: "ai", text: `Oi! ${mission ?? DEFAULT_MISSION} Se f(x) = 2x + 3, quanto vale f(4)? Me conta como você pensaria para resolver.` },
   ]);
@@ -653,7 +641,7 @@ function StudentChat({ sessionId, mission, path, focusActive: initFocus, focusSe
     setInput("");
     setSending(true);
     try {
-      const res = await postJson("/api/tutor/turn", { sessionId, participantId: participantIdentifier(), exerciseId, message: text });
+      const res = await postJson("/api/tutor/turn", { sessionId, participantToken: participantTokenFor(code), exerciseId, message: text });
       if (!res.ok) throw new Error(`tutor ${res.status}`);
       const data = (await res.json()) as { action: string; resposta_ao_aluno: string; exerciseId: string };
       setExerciseId(data.exerciseId);
@@ -878,13 +866,15 @@ function StudentReflection({ onSend }: { onSend: () => void }) {
 
 function TeacherDashboard({ session, onBack }: { session: Session | null; onBack: () => void }) {
   const [data, setData] = useState<DashboardData | null>(null);
-  const [status, setStatus] = useState<"loading" | "ready" | "empty" | "error">("loading");
+  const [status, setStatus] = useState<"loading" | "ready" | "empty" | "error" | "locked">("loading");
 
   useEffect(() => {
     if (!session) return;
     let cancelled = false;
-    getRequest(`/api/dashboard?sessionId=${encodeURIComponent(session.id)}`)
+    const token = teacherTokenFor(session.code) ?? "";
+    getRequest(`/api/dashboard?sessionId=${encodeURIComponent(session.id)}`, { authorization: `Bearer ${token}` })
       .then((res) => {
+        if (res.status === 401) throw new Error("locked");
         if (!res.ok) throw new Error(String(res.status));
         return res.json() as Promise<DashboardData>;
       })
@@ -893,8 +883,8 @@ function TeacherDashboard({ session, onBack }: { session: Session | null; onBack
         setData(body);
         setStatus(body.students === 0 ? "empty" : "ready");
       })
-      .catch(() => {
-        if (!cancelled) setStatus("error");
+      .catch((error: unknown) => {
+        if (!cancelled) setStatus(error instanceof Error && error.message === "locked" ? "locked" : "error");
       });
     return () => {
       cancelled = true;
@@ -944,6 +934,12 @@ function TeacherDashboard({ session, onBack }: { session: Session | null; onBack
         {shownStatus === "error" && (
           <div className="cartoon-card p-6 mb-6">
             <p className="text-base font-bold" style={{ color: "#B42318" }}>Não consegui carregar o painel agora.</p>
+          </div>
+        )}
+        {shownStatus === "locked" && (
+          <div className="cartoon-card p-6 mb-6">
+            <p className="text-base font-bold">Este painel só abre no navegador em que a sessão foi criada.</p>
+            <p className="text-sm mt-1" style={{ color: "var(--muted-foreground)" }}>Use o aparelho do professor que criou a sessão.</p>
           </div>
         )}
 
@@ -1047,7 +1043,7 @@ export default function App() {
   const handleChoosePath = (p: Path) => {
     setPath(p);
     if (session) {
-      postJson("/api/participations", { sessionId: session.id, participantId: participantIdentifier(), path: p }).catch(() => undefined);
+      postJson("/api/participations", { sessionId: session.id, participantToken: participantTokenFor(session.code), path: p }).catch(() => undefined);
     }
     go("student-focus");
   };
@@ -1063,12 +1059,12 @@ export default function App() {
     <div className="relative">
       {screen === "intro"              && <Intro onEnter={() => go("teacher-activate")} onStudent={() => go("student-join")} />}
       {screen === "student-join"       && <StudentJoin onBack={() => go("intro")} onJoined={(s) => { setSession(s); go("student-checkin"); }} />}
-      {screen === "student-checkin"    && <StudentCheckin sessionId={session?.id ?? ""} onDone={(m) => { setMission(m); go("student-paths"); }} />}
+      {screen === "student-checkin"    && <StudentCheckin sessionId={session?.id ?? ""} code={session?.code ?? ""} onDone={(m) => { setMission(m); go("student-paths"); }} />}
       {screen === "teacher-activate"   && <TeacherActivate onActivate={(s) => { setSession(s); go("teacher-activated"); }} />}
       {screen === "teacher-activated"  && <TeacherActivated session={session} onViewDashboard={() => go("teacher-dashboard")} />}
       {screen === "student-paths"      && <StudentPaths objective={session?.objective ?? "Objetivo ainda não definido"} onChoose={handleChoosePath} />}
       {screen === "student-focus"      && <StudentFocus onContinue={handleFocusContinue} />}
-      {screen === "student-chat"       && <StudentChat sessionId={session?.id ?? "sem-sessao"} mission={mission} path={path} focusActive={focusActive} focusSecs={focusSecs} onFinish={() => go("student-reflection")} />}
+      {screen === "student-chat"       && <StudentChat sessionId={session?.id ?? "sem-sessao"} code={session?.code ?? ""} mission={mission} path={path} focusActive={focusActive} focusSecs={focusSecs} onFinish={() => go("student-reflection")} />}
       {screen === "student-reflection" && <StudentReflection onSend={() => go("teacher-dashboard")} />}
       {screen === "teacher-dashboard"  && <TeacherDashboard session={session} onBack={() => go("teacher-activate")} />}
 
