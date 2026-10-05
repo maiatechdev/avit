@@ -575,16 +575,18 @@ function StudentFocus({ onContinue }: { onContinue: (active: boolean, secs: numb
 
 // ── Screen 5: Student Chat ────────────────────────────────────────────────────
 
-const INITIAL_MESSAGES: Message[] = [
-  { role: "ai", text: "Oi! Você escolheu investigar sobre mudanças climáticas. Antes de buscar fontes, me conta: o que você já sabe sobre o assunto? O que vem à sua mente quando ouve esse tema?" },
-  { role: "student", text: "Sei que o planeta tá aquecendo por causa dos gases, tipo CO2 das fábricas e carros." },
-  { role: "ai", text: "Boa! Você mencionou as fábricas e os carros. Mas pensa comigo: será que esses são os únicos setores responsáveis? O que acontece, por exemplo, com o que a gente come no dia a dia?" },
-];
+const EXERCISE_ID = "f1-avaliacao-1";
+const OPENING_MESSAGE: Message = {
+  role: "ai",
+  text: "Oi! Vamos pensar juntos. Se f(x) = 2x + 3, quanto vale f(4)? Me conta como você pensaria para resolver.",
+};
 
 function StudentChat({ path, focusActive: initFocus, focusSecs: initSecs, onFinish }: { path: Path; focusActive: boolean; focusSecs: number; onFinish: () => void }) {
-  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
+  const [messages, setMessages] = useState<Message[]>([OPENING_MESSAGE]);
   const [input, setInput] = useState("");
-  const [level, setLevel] = useState(2);
+  const [level, setLevel] = useState(1);
+  const [sending, setSending] = useState(false);
+  const [sessionId] = useState(() => crypto.randomUUID());
   const [focusOn, setFocusOn] = useState(initFocus);
   const [secsLeft, setSecsLeft] = useState(initSecs);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -609,14 +611,30 @@ function StudentChat({ path, focusActive: initFocus, focusSecs: initSecs, onFini
   // Só libera "Concluí o desafio" quando o raciocínio atinge o nível 3 — não na primeira resposta da IA.
   const showFinish = level >= 3;
 
-  const handleSend = () => {
-    if (!input.trim()) return;
-    setMessages((p) => [...p, { role: "student", text: input.trim() }]);
+  const handleSend = async () => {
+    const text = input.trim();
+    if (!text || sending) return;
+    setMessages((p) => [...p, { role: "student", text }]);
     setInput("");
-    setTimeout(() => {
-      setMessages((p) => [...p, { role: "ai", text: "Interessante! Você está conectando ideias importantes. Agora, como você acha que a mudança nos hábitos alimentares poderia contribuir para reduzir as emissões? Consegue pensar em algum exemplo prático no seu dia a dia?" }]);
-      if (level < 3) setLevel((l) => l + 1);
-    }, 1200);
+    setSending(true);
+    try {
+      const res = await fetch("/api/tutor/turn", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ sessionId, exerciseId: EXERCISE_ID, message: text }),
+      });
+      if (!res.ok) throw new Error(`tutor ${res.status}`);
+      const data = (await res.json()) as { action: string; resposta_ao_aluno: string };
+      setMessages((p) => [...p, { role: "ai", text: data.resposta_ao_aluno }]);
+      setLevel(data.action === "solved" ? 3 : 2);
+    } catch {
+      setMessages((p) => [
+        ...p,
+        { role: "ai", text: "Não consegui falar com o tutor agora. Tente enviar de novo." },
+      ]);
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -693,7 +711,7 @@ function StudentChat({ path, focusActive: initFocus, focusSecs: initSecs, onFini
               placeholder="Escreva sua resposta…" rows={1}
               className="flex-1 resize-none text-sm outline-none py-3 px-4 rounded-xl"
               style={{ background: "var(--muted)", color: "var(--foreground)", fontFamily: "Outfit, sans-serif", maxHeight: 100, border: "1.5px solid transparent" }} />
-            <button onClick={handleSend} disabled={!input.trim()}
+            <button onClick={handleSend} disabled={!input.trim() || sending}
               className="tap-scale w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
               style={{ background: input.trim() ? "var(--primary)" : "var(--muted)" }}>
               <svg viewBox="0 0 24 24" fill="none" stroke={input.trim() ? "white" : "var(--muted-foreground)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
