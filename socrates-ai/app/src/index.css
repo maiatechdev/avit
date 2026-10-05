@@ -23,23 +23,25 @@
 }
 
 :root {
-  --background: #FDFAF5;
-  --foreground: #2A1F10;
+  --background: #FBF7EE;
+  --foreground: #142463;
   --card: #FFFFFF;
-  --card-foreground: #2A1F10;
-  --primary: #D96B38;
+  --card-foreground: #142463;
+  --primary: #2F6BE8;
   --primary-foreground: #FFFFFF;
-  --secondary: #EEF6F4;
-  --secondary-foreground: #2A6B62;
-  --muted: #F2EBE0;
-  --muted-foreground: #8A7460;
-  --accent: #3EA89A;
-  --accent-foreground: #FFFFFF;
-  --ai: #656CC7;
-  --ai-muted: rgba(101, 108, 199, 0.12);
-  --border: #E8DDD0;
-  --ring: #D96B38;
-  --radius: 16px;
+  --secondary: #FFF1C7;
+  --secondary-foreground: #5C4300;
+  --muted: #E9EEFB;
+  --muted-foreground: #4A5A8A;
+  --accent: #F5B82E;
+  --accent-foreground: #142463;
+  --ai: #6C8CFF;
+  --ai-muted: rgba(108, 140, 255, 0.16);
+  --border: #142463;
+  --border-soft: #C9D4F2;
+  --ring: #2F6BE8;
+  --radius: 22px;
+  --sticker-shadow: 0 5px 0 #142463;
 }
 
 * { box-sizing: border-box; }
@@ -83,3 +85,26 @@ h1, h2, h3, h4, h5, h6 { font-family: 'Nunito', sans-serif; }
   transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .tap-scale:active { transform: scale(0.95); }
+
+/* ── Cartoon sticker surfaces ── */
+.cartoon-card {
+  background: var(--card);
+  border: 3px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--sticker-shadow);
+}
+
+.cartoon-btn {
+  border: 3px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--sticker-shadow);
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s ease;
+}
+.cartoon-btn:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 var(--border);
+}
+.cartoon-btn:disabled {
+  box-shadow: none;
+  transform: none;
+}

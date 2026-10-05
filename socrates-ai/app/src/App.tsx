@@ -39,7 +39,7 @@ function Intro({ onEnter }: { onEnter: () => void }) {
   return (
     <div
       className="min-h-screen flex items-start justify-center"
-      style={{ background: "var(--primary)" }}
+      style={{ background: "var(--background)" }}
     >
       <div
         className="relative w-full flex flex-col min-h-[100svh] items-center"
@@ -58,7 +58,7 @@ function Intro({ onEnter }: { onEnter: () => void }) {
           <p
             className="text-center font-extrabold uppercase leading-snug"
             style={{
-              color: "white",
+              color: "var(--foreground)",
               fontFamily: "Nunito, sans-serif",
               fontSize: "clamp(15px, 4.2vw, 18px)",
               letterSpacing: "0.04em",
@@ -73,10 +73,10 @@ function Intro({ onEnter }: { onEnter: () => void }) {
         <div className="w-full px-6 pb-12 pt-4 flex flex-col gap-4">
           <button
             onClick={onEnter}
-            className="btn-bounce w-full py-4 text-base font-extrabold rounded-2xl"
+            className="cartoon-btn w-full py-4 text-base font-extrabold"
             style={{
-              background: "white",
-              color: "var(--primary)",
+              background: "var(--primary)",
+              color: "#FFFFFF",
               fontFamily: "Nunito, sans-serif",
               letterSpacing: "0.01em",
             }}
@@ -85,7 +85,7 @@ function Intro({ onEnter }: { onEnter: () => void }) {
           </button>
           <p
             className="text-center text-xs"
-            style={{ color: "rgba(255,255,255,0.6)", fontFamily: "Outfit, sans-serif" }}
+            style={{ color: "var(--muted-foreground)", fontFamily: "Outfit, sans-serif" }}
           >
             Uso pedagógico mediado — Lei 15.100/2025
           </p>
@@ -95,11 +95,13 @@ function Intro({ onEnter }: { onEnter: () => void }) {
   );
 }
 
-/** Geometric 4-pointed spark — no face, no expression */
-function Spark({ size = 16, color = "currentColor" }: { size?: number; color?: string }) {
+/** Balão de pergunta da logo: a voz do tutor socrático */
+function QuestionBubble({ size = 16, color = "currentColor" }: { size?: number; color?: string }) {
   return (
-    <svg viewBox="0 0 20 20" style={{ width: size, height: size, display: "block", flexShrink: 0 }}>
-      <path d="M10 1 L11.9 8.1 L19 10 L11.9 11.9 L10 19 L8.1 11.9 L1 10 L8.1 8.1 Z" fill={color} />
+    <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ width: size, height: size, display: "block", flexShrink: 0 }}>
+      <path d="M4 5h16a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-8l-4 3v-3H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" />
+      <path d="M9.6 9.2a2.4 2.4 0 1 1 3.4 2.2c-.7.3-1 .8-1 1.5" />
+      <circle cx="12" cy="14.6" r="0.6" fill={color} stroke="none" />
     </svg>
   );
 }
@@ -450,33 +452,65 @@ function StudentPaths({ onChoose }: { onChoose: (path: Path) => void }) {
           </p>
         </div>
 
-        {/* 2×2 illustrated cards */}
-        <div className="grid grid-cols-2 gap-3 flex-1">
-          {PATHS.map((p) => {
-            const active = selected === p.id;
-            return (
-              <button
-                key={p.id}
-                onClick={() => setSelected(p.id as Path)}
-                className="tap-scale flex flex-col rounded-2xl overflow-hidden text-left border-2 transition-colors"
-                style={{
-                  background: active ? p.activeBg : "var(--card)",
-                  borderColor: active ? p.activeBorder : "transparent",
-                  boxShadow: active ? "none" : "0 1px 5px rgba(0,0,0,0.07)",
-                }}
-              >
-                {/* Illustration area */}
-                <div className="w-full h-[76px] overflow-hidden">
-                  <p.Scene />
-                </div>
-                {/* Text */}
-                <div className="px-3 pt-2 pb-3">
-                  <p className="text-sm font-bold mb-0.5" style={{ color: "var(--foreground)" }}>{p.title}</p>
-                  <p className="text-xs leading-snug" style={{ color: "var(--muted-foreground)" }}>{p.desc}</p>
-                </div>
-              </button>
-            );
-          })}
+        {/* Mapa de trilhas: rota até o destino, com cada caminho como um ponto de controle */}
+        <div className="relative flex-1">
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+            className="absolute inset-0 w-full h-full pointer-events-none"
+          >
+            <path
+              d="M50 4 C 12 26, 88 40, 50 52 S 12 80, 50 96"
+              fill="none"
+              stroke="var(--accent)"
+              strokeWidth="2.6"
+              strokeDasharray="0.1 4.2"
+              strokeLinecap="round"
+              vectorEffect="non-scaling-stroke"
+            />
+          </svg>
+          <div className="relative grid grid-cols-2 gap-4 py-2">
+            {PATHS.map((p, index) => {
+              const active = selected === p.id;
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => setSelected(p.id as Path)}
+                  aria-pressed={active}
+                  className="cartoon-card tap-scale relative flex flex-col overflow-hidden text-left"
+                  style={{
+                    background: active ? p.activeBg : "var(--card)",
+                    boxShadow: active ? `0 5px 0 ${p.activeBorder}` : "var(--sticker-shadow)",
+                    borderColor: active ? p.activeBorder : "var(--border)",
+                  }}
+                >
+                  <span
+                    className="absolute top-2 left-2 z-10 w-7 h-7 rounded-full flex items-center justify-center text-xs font-extrabold"
+                    style={{ background: "var(--accent)", color: "var(--foreground)", border: "2px solid var(--border)" }}
+                  >
+                    {index + 1}
+                  </span>
+                  <div className="w-full h-[84px] overflow-hidden">
+                    <p.Scene />
+                  </div>
+                  <div className="px-3 pt-2 pb-3">
+                    <p className="text-sm font-bold mb-0.5" style={{ color: "var(--foreground)" }}>{p.title}</p>
+                    <p className="text-xs leading-snug" style={{ color: "var(--muted-foreground)" }}>{p.desc}</p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="flex justify-center mt-3">
+          <span
+            className="px-4 py-1.5 rounded-full text-xs font-extrabold"
+            style={{ background: "var(--accent)", color: "var(--foreground)", border: "2px solid var(--border)" }}
+          >
+            Destino: o objetivo de hoje
+          </span>
         </div>
 
         <button
@@ -676,8 +710,8 @@ function StudentChat({ path, focusActive: initFocus, focusSecs: initSecs, onFini
           {messages.map((m, i) => (
             <div key={i} className={`flex ${m.role === "student" ? "justify-end" : "justify-start"}`}>
               {m.role === "ai" && (
-                <div className="w-8 h-8 rounded-full flex items-center justify-center mr-2 shrink-0 self-end" style={{ background: "var(--ai)" }}>
-                  <Spark size={14} color="white" />
+                <div className="w-8 h-8 rounded-full flex items-center justify-center mr-2 shrink-0 self-end" style={{ background: "var(--foreground)", border: "2px solid var(--border)" }}>
+                  <QuestionBubble size={16} color="white" />
                 </div>
               )}
               <div
@@ -685,8 +719,9 @@ function StudentChat({ path, focusActive: initFocus, focusSecs: initSecs, onFini
                 style={{
                   background: m.role === "ai" ? "var(--card)" : "var(--primary)",
                   color: m.role === "ai" ? "var(--foreground)" : "white",
-                  borderRadius: m.role === "ai" ? "4px 18px 18px 18px" : "18px 4px 18px 18px",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.07)",
+                  borderRadius: m.role === "ai" ? "6px 22px 22px 22px" : "22px 6px 22px 22px",
+                  border: "2.5px solid var(--border)",
+                  boxShadow: m.role === "ai" ? "0 4px 0 var(--border)" : "0 4px 0 #0E2A8C",
                   fontFamily: "Outfit, sans-serif",
                 }}
               >
@@ -866,7 +901,7 @@ function TeacherDashboard({ onBack }: { onBack: () => void }) {
         {/* AI insight */}
         <div className="rounded-2xl p-5 flex gap-3 mb-6" style={{ background: "var(--secondary)", border: "1.5px solid rgba(58,168,154,0.2)" }}>
           <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "var(--ai)" }}>
-            <Spark size={18} color="white" />
+            <QuestionBubble size={20} color="white" />
           </div>
           <div>
             <p className="text-xs font-bold mb-1.5" style={{ color: "var(--ai)" }}>INSIGHT DA IA</p>
