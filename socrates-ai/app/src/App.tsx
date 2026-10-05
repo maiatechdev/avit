@@ -22,10 +22,10 @@ function fmt(s: number) {
 
 function Shell({ children, wide = false }: { children: React.ReactNode; wide?: boolean }) {
   return (
-    <div className="min-h-screen flex items-start justify-center" style={{ background: "var(--background)" }}>
+    <div className="min-h-screen w-full" style={{ background: "var(--background)" }}>
       <div
-        className="relative w-full flex flex-col"
-        style={{ maxWidth: wide ? 1120 : 430, minHeight: "100svh", background: "var(--background)", boxShadow: "0 0 60px rgba(0,0,0,0.08)" }}
+        className={`relative w-full mx-auto flex flex-col ${wide ? "" : "max-w-3xl"}`}
+        style={{ minHeight: "100svh" }}
       >
         {children}
       </div>
@@ -42,8 +42,7 @@ function Intro({ onEnter }: { onEnter: () => void }) {
       style={{ background: "var(--background)" }}
     >
       <div
-        className="relative w-full flex flex-col min-h-[100svh] items-center"
-        style={{ maxWidth: 430 }}
+        className="relative w-full mx-auto max-w-3xl flex flex-col min-h-[100svh] items-center"
       >
         {/* Logo centered */}
         <div className="flex-1 flex flex-col items-center justify-center px-8 gap-8">
