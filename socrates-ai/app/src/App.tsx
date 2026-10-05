@@ -1040,91 +1040,147 @@ function StudentReflection({ onSend }: { onSend: () => void }) {
 
 // ── Screen 7: Teacher Dashboard ───────────────────────────────────────────────
 
-const METRICS = [
-  { label: "Engajamento", value: "81%", sub: "participaram ativamente", color: "#2F6BE8" },
-  { label: "Autonomia",   value: "74%", sub: "escolheram caminhos diferentes", color: "#A16A00" },
-  { label: "Competência", value: "68%", sub: "avançaram de nível", color: "#8A5CF0" },
-  { label: "Vínculo",     value: "72%", sub: "participaram em atividade colaborativa", color: "#1F8F5F" },
-];
 
-function TeacherDashboard({ onBack }: { onBack: () => void }) {
+type DashboardData = {
+  students: number;
+  engagement: number;
+  autonomy: number;
+  competence: number;
+  bond: number;
+  pathCounts: Record<string, number>;
+  stuckShare: number;
+  suggestion: string;
+};
+
+function TeacherDashboard({ session, onBack }: { session: Session | null; onBack: () => void }) {
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [status, setStatus] = useState<"loading" | "ready" | "empty" | "error">("loading");
+
+  useEffect(() => {
+    if (!session) return;
+    let cancelled = false;
+    fetch(`/api/dashboard?sessionId=${encodeURIComponent(session.id)}`)
+      .then((res) => {
+        if (!res.ok) throw new Error(String(res.status));
+        return res.json() as Promise<DashboardData>;
+      })
+      .then((body) => {
+        if (cancelled) return;
+        setData(body);
+        setStatus(body.students === 0 ? "empty" : "ready");
+      })
+      .catch(() => {
+        if (!cancelled) setStatus("error");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [session]);
+
+  const shownStatus = session ? status : "empty";
+  const metrics = data
+    ? [
+        { label: "Engajamento", value: data.engagement, sub: "escolheram uma trilha", color: "#2F6BE8" },
+        { label: "Autonomia", value: data.autonomy, sub: "trilhas diferentes usadas pela turma", color: "#A16A00" },
+        { label: "Competência", value: data.competence, sub: "exercícios resolvidos por aluno", color: "#8A5CF0" },
+        { label: "Vínculo", value: data.bond, sub: "escolheram colaborar", color: "#1F8F5F" },
+      ]
+    : [];
+
+  const pathRows = [
+    { key: "investigar", label: "Investigar", color: "#F5B82E" },
+    { key: "colaborar", label: "Colaborar", color: "#8E6CFF" },
+    { key: "resolver", label: "Resolver", color: "#2FB67C" },
+    { key: "criar", label: "Criar", color: "#FF7A59" },
+  ];
+  const totalChosen = data ? Object.values(data.pathCounts).reduce((a, b) => a + b, 0) : 0;
+
   return (
     <Shell wide>
       <div className="screen-enter flex flex-col min-h-[100svh] px-5 lg:px-10 pt-6 pb-24 overflow-y-auto scrollbar-hide">
         <div className="flex items-center justify-between mb-6">
           <div>
             <p className="text-xs font-semibold mb-0.5" style={{ color: "var(--muted-foreground)" }}>PAINEL DO PROFESSOR</p>
-            <h1 className="text-xl font-bold leading-tight">Mudanças climáticas</h1>
+            <h1 className="text-xl font-bold leading-tight">{session?.objective ?? "Nenhuma sessão ativa"}</h1>
           </div>
-          <div className="px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5" style={{ background: "#E9FAF2", color: "#1F8F5F" }}>
-            <span className="w-1.5 h-1.5 rounded-full block" style={{ background: "#2FB67C" }} /> Sessão encerrada
-          </div>
+          {session && (
+            <div className="px-3 py-1.5 rounded-full text-xs font-semibold" style={{ background: "#E9FAF2", color: "#1F8F5F" }}>
+              {session.code}
+            </div>
+          )}
         </div>
 
-        {/* Summary strip */}
-        <div className="rounded-2xl p-4 mb-5 flex items-center justify-between" style={{ background: "var(--muted)" }}>
-          {[{ v: "28", l: "alunos", c: "#2F6BE8" }, { v: "24", l: "participaram", c: "#A16A00" }, { v: "19", l: "concluíram", c: "#1F8F5F" }].map((s, i, arr) => (
-            <div key={s.l} className="flex items-center gap-4">
+        {shownStatus === "loading" && <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>Carregando dados da turma…</p>}
+        {shownStatus === "empty" && (
+          <div className="cartoon-card p-6 mb-6">
+            <p className="text-base font-bold">Ainda não há respostas nesta sessão.</p>
+            <p className="text-sm mt-1" style={{ color: "var(--muted-foreground)" }}>Os números aparecem assim que os alunos entrarem e escolherem uma trilha.</p>
+          </div>
+        )}
+        {shownStatus === "error" && (
+          <div className="cartoon-card p-6 mb-6">
+            <p className="text-base font-bold" style={{ color: "#B42318" }}>Não consegui carregar o painel agora.</p>
+          </div>
+        )}
+
+        {shownStatus === "ready" && data && (
+          <>
+            <div className="rounded-2xl p-4 mb-5 flex items-center justify-between" style={{ background: "var(--muted)", border: "2px solid var(--border)" }}>
               <div className="text-center">
-                <p className="text-2xl font-bold" style={{ color: s.c }}>{s.v}</p>
-                <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>{s.l}</p>
+                <p className="text-2xl font-extrabold" style={{ color: "var(--foreground)" }}>{data.students}</p>
+                <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>alunos no check-in</p>
               </div>
-              {i < arr.length - 1 && <div className="w-px h-10" style={{ background: "var(--border)" }} />}
             </div>
-          ))}
-        </div>
 
-        {/* Metrics */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-          {METRICS.map((m) => (
-            <div key={m.label} className="rounded-2xl p-4 flex flex-col gap-2" style={{ background: "var(--card)", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
-              <p className="text-xs font-semibold" style={{ color: "var(--muted-foreground)" }}>{m.label.toUpperCase()}</p>
-              <p className="text-3xl font-bold" style={{ color: m.color }}>{m.value}</p>
-              <div className="w-full h-1.5 rounded-full" style={{ background: "var(--muted)" }}>
-                <div className="h-full rounded-full" style={{ width: m.value, background: m.color, opacity: 0.7 }} />
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+              {metrics.map((m) => (
+                <div key={m.label} className="cartoon-card rounded-2xl p-4 flex flex-col gap-2">
+                  <p className="text-xs font-extrabold" style={{ color: "var(--muted-foreground)" }}>{m.label.toUpperCase()}</p>
+                  <p className="text-3xl font-extrabold" style={{ color: m.color }}>{m.value}%</p>
+                  <div className="w-full h-2 rounded-full" style={{ background: "var(--muted)" }}>
+                    <div className="h-full rounded-full" style={{ width: `${m.value}%`, background: m.color }} />
+                  </div>
+                  <p className="text-xs leading-snug" style={{ color: "var(--muted-foreground)" }}>{m.sub}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="lg:grid lg:grid-cols-2 lg:gap-5 lg:items-start">
+              <div className="rounded-2xl p-5 flex gap-3 mb-6" style={{ background: "var(--secondary)", border: "2px solid var(--border)" }}>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "var(--ai)", border: "2px solid var(--border)" }}>
+                  <QuestionBubble size={20} color="white" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold mb-1.5" style={{ color: "var(--foreground)" }}>SUGESTÃO PARA A PRÓXIMA AULA</p>
+                  <p className="text-sm leading-relaxed" style={{ color: "var(--secondary-foreground)" }}>{data.suggestion}</p>
+                  <p className="text-xs mt-2" style={{ color: "var(--muted-foreground)" }}>
+                    {data.stuckShare}% dos alunos marcaram “não entendi ainda” no check-in.
+                  </p>
+                </div>
               </div>
-              <p className="text-xs leading-snug" style={{ color: "var(--muted-foreground)" }}>{m.sub}</p>
-            </div>
-          ))}
-        </div>
 
-        <div className="lg:grid lg:grid-cols-2 lg:gap-5 lg:items-start">
-        {/* AI insight */}
-        <div className="rounded-2xl p-5 flex gap-3 mb-6" style={{ background: "var(--secondary)", border: "2px solid var(--border)" }}>
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "var(--ai)" }}>
-            <QuestionBubble size={20} color="white" />
-          </div>
-          <div>
-            <p className="text-xs font-bold mb-1.5" style={{ color: "var(--ai)" }}>INSIGHT DA IA</p>
-            <p className="text-sm leading-relaxed" style={{ color: "var(--secondary-foreground)" }}>
-              Alunos em atividades colaborativas concluíram mais — considere ampliar esse formato nas próximas atividades.
-            </p>
-          </div>
-        </div>
-
-        {/* Path distribution */}
-        <div className="rounded-2xl p-4 mb-6" style={{ background: "var(--card)", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
-          <p className="text-xs font-bold mb-4" style={{ color: "var(--muted-foreground)" }}>DISTRIBUIÇÃO POR CAMINHO</p>
-          {[
-            { label: "Investigar", pct: 37, color: "#F5B82E" },
-            { label: "Colaborar",  pct: 29, color: "#8E6CFF" },
-            { label: "Resolver",   pct: 21, color: "#2FB67C" },
-            { label: "Criar",      pct: 13, color: "#FF7A59" },
-          ].map((r) => (
-            <div key={r.label} className="flex items-center gap-3 mb-3 last:mb-0">
-              <p className="text-xs w-16 shrink-0" style={{ color: "var(--foreground)" }}>{r.label}</p>
-              <div className="flex-1 h-2 rounded-full" style={{ background: "var(--muted)" }}>
-                <div className="h-full rounded-full" style={{ width: `${r.pct}%`, background: r.color }} />
+              <div className="cartoon-card rounded-2xl p-4 mb-6">
+                <p className="text-xs font-extrabold mb-4" style={{ color: "var(--muted-foreground)" }}>ESCOLHAS POR TRILHA</p>
+                {pathRows.map((r) => {
+                  const count = data.pathCounts[r.key] ?? 0;
+                  const share = totalChosen === 0 ? 0 : Math.round((count / totalChosen) * 100);
+                  return (
+                    <div key={r.key} className="flex items-center gap-3 mb-3 last:mb-0">
+                      <p className="text-xs font-bold w-20 shrink-0" style={{ color: "var(--foreground)" }}>{r.label}</p>
+                      <div className="flex-1 h-2 rounded-full" style={{ background: "var(--muted)" }}>
+                        <div className="h-full rounded-full" style={{ width: `${share}%`, background: r.color }} />
+                      </div>
+                      <p className="text-xs w-16 text-right" style={{ color: "var(--muted-foreground)" }}>{count} · {share}%</p>
+                    </div>
+                  );
+                })}
               </div>
-              <p className="text-xs w-8 text-right" style={{ color: "var(--muted-foreground)" }}>{r.pct}%</p>
             </div>
-          ))}
-        </div>
+          </>
+        )}
 
-        </div>
-
-        <button onClick={onBack} className="btn-bounce w-full py-4 text-base font-bold rounded-2xl"
-          style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}>
+        <button onClick={onBack} className="cartoon-btn w-full py-4 text-base font-extrabold"
+          style={{ background: "var(--primary)", color: "#FFFFFF" }}>
           Nova sessão
         </button>
       </div>
@@ -1157,6 +1213,13 @@ export default function App() {
 
   const handleChoosePath = (p: Path) => {
     setPath(p);
+    if (session) {
+      fetch("/api/participations", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ sessionId: session.id, participantId: participantIdentifier(), path: p }),
+      }).catch(() => undefined);
+    }
     go("student-focus");
   };
 
@@ -1178,7 +1241,7 @@ export default function App() {
       {screen === "student-focus"      && <StudentFocus onContinue={handleFocusContinue} />}
       {screen === "student-chat"       && <StudentChat sessionId={session?.id ?? "sem-sessao"} mission={mission} path={path} focusActive={focusActive} focusSecs={focusSecs} onFinish={() => go("student-reflection")} />}
       {screen === "student-reflection" && <StudentReflection onSend={() => go("teacher-dashboard")} />}
-      {screen === "teacher-dashboard"  && <TeacherDashboard onBack={() => go("teacher-activate")} />}
+      {screen === "teacher-dashboard"  && <TeacherDashboard session={session} onBack={() => go("teacher-activate")} />}
 
       {/* Navigation tabs — hidden na tela de splash */}
       {screen !== "intro" && (
