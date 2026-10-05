@@ -119,7 +119,7 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
 
 function Confetti({ active }: { active: boolean }) {
   if (!active) return null;
-  const palette = ["#D96B38", "#3EA89A", "#F59E0B", "#8B5CF6", "#4BAA6E", "#E8693A"];
+  const palette = ["#2F6BE8", "#F5B82E", "#FF7A59", "#2FB67C", "#8E6CFF", "#6C8CFF"];
   return (
     <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 300, overflow: "hidden" }}>
       {Array.from({ length: 28 }).map((_, i) => {
@@ -145,134 +145,85 @@ function Confetti({ active }: { active: boolean }) {
   );
 }
 
-// ── Flat illustrated scenes for path cards ────────────────────────────────────
+// ── Cartoon illustrations (estilo da logo: traço marinho forte, cores vivas) ──
+
+const INK = "#142463";
+const SKIN = "#F4B183";
+
+function CartoonFigure({ x, y, shirt = "#2F6BE8", hair = "#142463" }: { x: number; y: number; shirt?: string; hair?: string }) {
+  return (
+    <g transform={`translate(${x} ${y})`} strokeLinejoin="round" strokeLinecap="round">
+      <path d="M-17 46 Q-17 24 0 24 Q17 24 17 46 Z" fill={shirt} stroke={INK} strokeWidth="3" />
+      <rect x="-5" y="15" width="10" height="11" rx="3" fill={SKIN} stroke={INK} strokeWidth="2.5" />
+      <circle cx="0" cy="0" r="13" fill={SKIN} stroke={INK} strokeWidth="3" />
+      <path d="M-13.5 -1 Q-15 -17 0 -16 Q15 -17 13.5 -1 Q8 -8 0 -8 Q-8 -8 -13.5 -1 Z" fill={hair} stroke={INK} strokeWidth="2.5" />
+      <circle cx="-4.8" cy="2" r="1.9" fill={INK} />
+      <circle cx="4.8" cy="2" r="1.9" fill={INK} />
+      <path d="M-4 7 Q0 10.5 4 7" fill="none" stroke={INK} strokeWidth="2.2" />
+    </g>
+  );
+}
 
 function SceneInvestigar() {
   return (
-    <svg viewBox="0 0 100 70" fill="none" className="w-full h-full">
-      <ellipse cx="50" cy="35" rx="48" ry="33" fill="#FEF3C7" />
-      {/* Person silhouette */}
-      <circle cx="17" cy="20" r="8" fill="#D96B38" />
-      <rect x="11" y="29" width="12" height="22" rx="5" fill="#D96B38" opacity="0.85" />
-      {/* Arm reaching to phone */}
-      <rect x="22" y="34" width="12" height="3.5" rx="1.8" fill="#D96B38" opacity="0.7" />
-      {/* Phone */}
-      <rect x="33" y="12" width="22" height="38" rx="4" fill="#F59E0B" />
-      <rect x="36" y="16" width="16" height="26" rx="2" fill="white" opacity="0.95" />
-      <rect x="38" y="20" width="12" height="2" rx="1" fill="#F59E0B" opacity="0.7" />
-      <rect x="38" y="25" width="9" height="2" rx="1" fill="#F59E0B" opacity="0.45" />
-      <rect x="38" y="30" width="11" height="2" rx="1" fill="#F59E0B" opacity="0.3" />
-      {/* Magnifying glass */}
-      <circle cx="71" cy="38" r="11" fill="white" opacity="0.65" />
-      <circle cx="71" cy="38" r="8" fill="none" stroke="#D96B38" strokeWidth="2.5" />
-      <line x1="77" y1="44" x2="83" y2="50" stroke="#D96B38" strokeWidth="2.5" strokeLinecap="round" />
-      <circle cx="68" cy="35" r="2.5" fill="#D96B38" opacity="0.2" />
+    <svg viewBox="0 0 120 90" className="w-full h-full">
+      <rect width="120" height="90" fill="#FFF3C4" />
+      <CartoonFigure x={38} y={44} />
+      <circle cx="84" cy="40" r="15" fill="#D6ECFF" stroke={INK} strokeWidth="3" />
+      <path d="M77 40h14M77 46h9" stroke={INK} strokeWidth="2.4" strokeLinecap="round" />
+      <path d="M93 52 L106 66" stroke="#F5B82E" strokeWidth="6" strokeLinecap="round" />
+      <path d="M93 52 L106 66" stroke={INK} strokeWidth="1.6" strokeLinecap="round" />
     </svg>
   );
 }
 
 function SceneCriar() {
   return (
-    <svg viewBox="0 0 100 70" fill="none" className="w-full h-full">
-      <ellipse cx="50" cy="35" rx="48" ry="33" fill="#FECACA" opacity="0.55" />
-      {/* Camera body */}
-      <rect x="14" y="22" width="52" height="30" rx="6" fill="#D96B38" />
-      <rect x="18" y="26" width="44" height="22" rx="4" fill="white" opacity="0.15" />
-      {/* Lens */}
-      <circle cx="38" cy="37" r="10" fill="white" opacity="0.9" />
-      <circle cx="38" cy="37" r="7" fill="#D96B38" opacity="0.25" />
-      <circle cx="38" cy="37" r="4" fill="#D96B38" />
-      {/* Viewfinder bump */}
-      <rect x="56" y="18" width="6" height="6" rx="2" fill="#D96B38" opacity="0.8" />
-      {/* Rec button */}
-      <circle cx="62" cy="37" r="4" fill="white" opacity="0.85" />
-      <circle cx="62" cy="37" r="2.5" fill="#D96B38" />
-      {/* Person holding — partial silhouette right side */}
-      <circle cx="85" cy="24" r="8" fill="#F59E0B" />
-      <rect x="79" y="33" width="12" height="22" rx="5" fill="#F59E0B" opacity="0.85" />
-      {/* Arm holding camera */}
-      <rect x="67" y="34" width="14" height="4" rx="2" fill="#F59E0B" opacity="0.7" />
-      {/* Record dot indicator */}
-      <circle cx="22" cy="15" r="4" fill="#D96B38" />
-      <circle cx="22" cy="15" r="2" fill="white" opacity="0.6" />
+    <svg viewBox="0 0 120 90" className="w-full h-full">
+      <rect width="120" height="90" fill="#FFE3DA" />
+      <CartoonFigure x={36} y={44} shirt="#FF7A59" />
+      <rect x="62" y="32" width="38" height="26" rx="8" fill="#2F6BE8" stroke={INK} strokeWidth="3" />
+      <rect x="72" y="26" width="12" height="8" rx="3" fill="#2F6BE8" stroke={INK} strokeWidth="2.5" />
+      <circle cx="81" cy="45" r="7" fill="#D6ECFF" stroke={INK} strokeWidth="2.5" />
+      <path d="M100 18 L102 23 L107 25 L102 27 L100 32 L98 27 L93 25 L98 23 Z" fill="#F5B82E" stroke={INK} strokeWidth="2" strokeLinejoin="round" />
     </svg>
   );
 }
 
 function SceneResolver() {
   return (
-    <svg viewBox="0 0 100 70" fill="none" className="w-full h-full">
-      <ellipse cx="50" cy="35" rx="48" ry="33" fill="#CCFBF1" opacity="0.6" />
-      {/* Person thinking */}
-      <circle cx="20" cy="22" r="8" fill="#D96B38" />
-      <rect x="14" y="31" width="12" height="22" rx="5" fill="#D96B38" opacity="0.85" />
-      {/* Thought dots */}
-      <circle cx="31" cy="19" r="2" fill="#3EA89A" opacity="0.7" />
-      <circle cx="38" cy="15" r="2.8" fill="#3EA89A" opacity="0.55" />
-      <circle cx="46" cy="12" r="3.5" fill="#3EA89A" opacity="0.4" />
-      {/* Lightbulb */}
-      <circle cx="66" cy="30" r="16" fill="#3EA89A" opacity="0.18" />
-      <circle cx="66" cy="30" r="12" fill="#3EA89A" opacity="0.75" />
-      <circle cx="66" cy="30" r="7" fill="white" opacity="0.35" />
-      {/* Bulb base */}
-      <rect x="61" y="42" width="10" height="5" rx="2" fill="#2A6B62" />
-      <rect x="63" y="47" width="6" height="3" rx="1.5" fill="#2A6B62" opacity="0.7" />
-      {/* Glow rays */}
-      <line x1="66" y1="13" x2="66" y2="9" stroke="#3EA89A" strokeWidth="2" strokeLinecap="round" />
-      <line x1="78" y1="18" x2="81" y2="15" stroke="#3EA89A" strokeWidth="2" strokeLinecap="round" />
-      <line x1="83" y1="30" x2="87" y2="30" stroke="#3EA89A" strokeWidth="2" strokeLinecap="round" />
-      <line x1="78" y1="42" x2="81" y2="45" stroke="#3EA89A" strokeWidth="2" strokeLinecap="round" />
+    <svg viewBox="0 0 120 90" className="w-full h-full">
+      <rect width="120" height="90" fill="#DDF6EA" />
+      <CartoonFigure x={36} y={44} shirt="#2FB67C" />
+      <circle cx="84" cy="34" r="14" fill="#FFE58A" stroke={INK} strokeWidth="3" />
+      <rect x="77" y="46" width="14" height="9" rx="3" fill="#6C8CFF" stroke={INK} strokeWidth="2.5" />
+      <path d="M84 12 V7 M66 24 L62 20 M102 24 L106 20" stroke={INK} strokeWidth="2.6" strokeLinecap="round" />
     </svg>
   );
 }
 
 function SceneColaborar() {
   return (
-    <svg viewBox="0 0 100 70" fill="none" className="w-full h-full">
-      <ellipse cx="50" cy="35" rx="48" ry="33" fill="#EDE9FE" opacity="0.8" />
-      {/* Person 1 (left, violet) */}
-      <circle cx="16" cy="20" r="8" fill="#8B5CF6" />
-      <rect x="10" y="29" width="12" height="22" rx="5" fill="#8B5CF6" opacity="0.85" />
-      <rect x="22" y="33" width="14" height="4" rx="2" fill="#8B5CF6" opacity="0.6" />
-      {/* Person 2 (right, terracota) */}
-      <circle cx="84" cy="20" r="8" fill="#D96B38" />
-      <rect x="78" y="29" width="12" height="22" rx="5" fill="#D96B38" opacity="0.85" />
-      <rect x="64" y="33" width="14" height="4" rx="2" fill="#D96B38" opacity="0.6" />
-      {/* Shared document/card in center */}
-      <rect x="34" y="14" width="32" height="40" rx="5" fill="white" />
-      <rect x="34" y="14" width="32" height="40" rx="5" fill="none" stroke="#E8DDD0" strokeWidth="1.5" />
-      <rect x="39" y="22" width="22" height="2.5" rx="1.25" fill="#8B5CF6" opacity="0.5" />
-      <rect x="39" y="29" width="16" height="2.5" rx="1.25" fill="#D96B38" opacity="0.5" />
-      <rect x="39" y="36" width="19" height="2.5" rx="1.25" fill="#3EA89A" opacity="0.5" />
-      <rect x="39" y="43" width="14" height="2.5" rx="1.25" fill="#8B5CF6" opacity="0.3" />
+    <svg viewBox="0 0 120 90" className="w-full h-full">
+      <rect width="120" height="90" fill="#EDE7FF" />
+      <CartoonFigure x={30} y={46} />
+      <CartoonFigure x={90} y={46} shirt="#8E6CFF" />
+      <rect x="46" y="8" width="28" height="18" rx="8" fill="#FFFFFF" stroke={INK} strokeWidth="3" />
+      <path d="M52 26 L56 26 L52 31 Z" fill="#FFFFFF" stroke={INK} strokeWidth="2.5" strokeLinejoin="round" />
+      <text x="60" y="22" textAnchor="middle" fontFamily="Nunito, sans-serif" fontWeight="800" fontSize="13" fill={INK}>?</text>
     </svg>
   );
 }
 
-// ── Illustration: reflection banner ───────────────────────────────────────────
-
 function SceneReflection() {
   return (
-    <svg viewBox="0 0 320 90" fill="none" className="w-full">
-      <rect width="320" height="90" fill="#EEF6F4" />
-      {/* Decorative arcs */}
-      <ellipse cx="0" cy="90" rx="80" ry="60" fill="#3EA89A" opacity="0.08" />
-      <ellipse cx="320" cy="0" rx="80" ry="60" fill="#D96B38" opacity="0.07" />
-      {/* Sitting person */}
-      <circle cx="160" cy="30" r="14" fill="#D96B38" />
-      <rect x="148" y="44" width="24" height="28" rx="9" fill="#D96B38" opacity="0.85" />
-      {/* Phone in hand */}
-      <rect x="172" y="50" width="14" height="24" rx="3" fill="#3EA89A" />
-      <rect x="174" y="53" width="10" height="16" rx="2" fill="white" opacity="0.85" />
-      {/* Arm */}
-      <rect x="168" y="54" width="7" height="3.5" rx="1.8" fill="#D96B38" opacity="0.7" />
-      {/* Sparkles around */}
-      <circle cx="120" cy="25" r="3" fill="#F59E0B" opacity="0.7" />
-      <circle cx="200" cy="20" r="2" fill="#8B5CF6" opacity="0.6" />
-      <circle cx="210" cy="55" r="2.5" fill="#3EA89A" opacity="0.5" />
-      <circle cx="110" cy="55" r="2" fill="#D96B38" opacity="0.5" />
-      {/* Heart / feeling indicator */}
-      <path d="M135 35 C135 32 139 30 141 33 C143 30 147 32 147 35 C147 38 141 43 141 43 C141 43 135 38 135 35 Z" fill="#D96B38" opacity="0.6" />
+    <svg viewBox="0 0 320 90" className="w-full">
+      <rect width="320" height="90" fill="#FFF1C7" />
+      <CartoonFigure x={130} y={50} shirt="#FF7A59" />
+      <rect x="186" y="6" width="90" height="42" rx="18" fill="#FFFFFF" stroke={INK} strokeWidth="3" />
+      <circle cx="200" cy="50" r="3.5" fill="#FFFFFF" stroke={INK} strokeWidth="2.2" />
+      <circle cx="194" cy="56" r="2" fill="#FFFFFF" stroke={INK} strokeWidth="2" />
+      <path d="M205 27 L214 36 L232 17" fill="none" stroke="#2FB67C" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -319,7 +270,7 @@ function TeacherActivate({ onActivate }: { onActivate: () => void }) {
                 padding: "16px 18px",
                 color: "var(--foreground)",
                 fontFamily: "Outfit, sans-serif",
-                boxShadow: objective ? "0 0 0 3px rgba(217,107,56,0.1)" : "none",
+                boxShadow: objective ? "0 0 0 3px rgba(47,107,232,0.15)" : "none",
               }}
             />
             <p className="text-xs mt-2 ml-1" style={{ color: "var(--muted-foreground)" }}>
@@ -366,13 +317,13 @@ function TeacherActivated({ onViewDashboard }: { onViewDashboard: () => void }) 
     <Shell>
       <div className="screen-enter flex flex-col min-h-[100svh] px-6 pt-6 pb-24">
         <div className="flex items-center gap-2 mb-8">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 block" />
+          <span className="w-2 h-2 rounded-full block" style={{ background: "#2FB67C" }} />
           <span className="text-xs font-medium" style={{ color: "var(--muted-foreground)" }}>Sessão ativa — Lei 15.100/2025</span>
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center gap-6">
-          <div className="w-16 h-16 rounded-3xl flex items-center justify-center" style={{ background: "#EEF8F0" }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="#3D9A5C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8">
+          <div className="w-16 h-16 rounded-3xl flex items-center justify-center" style={{ background: "#E9FAF2" }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="#1F8F5F" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8">
               <polyline points="20 6 9 17 4 12" />
             </svg>
           </div>
@@ -389,7 +340,7 @@ function TeacherActivated({ onViewDashboard }: { onViewDashboard: () => void }) 
               {Array.from({ length: 100 }).map((_, i) => {
                 const corners = [0,1,2,3,10,11,12,20,21,22,7,8,9,17,18,19,27,28,29,70,71,72,80,81,82,90,91,92,77,78,79,87,88,89,97,98,99];
                 const fill = corners.includes(i) || (i * 7919) % 100 > 45;
-                return <div key={i} className="rounded-sm" style={{ background: fill ? "#2A1F10" : "transparent" }} />;
+                return <div key={i} className="rounded-sm" style={{ background: fill ? "var(--foreground)" : "transparent" }} />;
               })}
             </div>
             <div className="px-6 py-3 rounded-2xl text-center" style={{ background: "var(--muted)" }}>
@@ -398,7 +349,7 @@ function TeacherActivated({ onViewDashboard }: { onViewDashboard: () => void }) 
             </div>
           </div>
 
-          <div className="w-full rounded-2xl p-4 flex items-center gap-3" style={{ background: "var(--secondary)", border: "1px solid rgba(58,168,154,0.2)" }}>
+          <div className="w-full rounded-2xl p-4 flex items-center gap-3" style={{ background: "var(--secondary)", border: "2px solid var(--border)" }}>
             <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 shrink-0">
               <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" strokeWidth="2.5" />
             </svg>
@@ -420,10 +371,10 @@ function TeacherActivated({ onViewDashboard }: { onViewDashboard: () => void }) 
 // ── Screen 3: Student Path Choice ────────────────────────────────────────────
 
 const PATHS = [
-  { id: "investigar", Scene: SceneInvestigar, title: "Investigar", desc: "Pesquisar e comparar fontes", activeBorder: "#F59E0B", activeBg: "#FFFBEB" },
-  { id: "criar",      Scene: SceneCriar,      title: "Criar",      desc: "Produzir um vídeo curto",   activeBorder: "#D96B38", activeBg: "#FFF7F5" },
-  { id: "resolver",   Scene: SceneResolver,   title: "Resolver",   desc: "Solucionar um problema real", activeBorder: "#3EA89A", activeBg: "#F0FDFB" },
-  { id: "colaborar",  Scene: SceneColaborar,  title: "Colaborar",  desc: "Desenvolver solução em grupo", activeBorder: "#8B5CF6", activeBg: "#F5F3FF" },
+  { id: "investigar", Scene: SceneInvestigar, title: "Investigar", desc: "Pesquisar e comparar fontes", activeBorder: "#F5B82E", activeBg: "#FFF8DD" },
+  { id: "criar",      Scene: SceneCriar,      title: "Criar",      desc: "Produzir um vídeo curto",   activeBorder: "#FF7A59", activeBg: "#FFF0EB" },
+  { id: "resolver",   Scene: SceneResolver,   title: "Resolver",   desc: "Solucionar um problema real", activeBorder: "#2FB67C", activeBg: "#E9FAF2" },
+  { id: "colaborar",  Scene: SceneColaborar,  title: "Colaborar",  desc: "Desenvolver solução em grupo", activeBorder: "#8E6CFF", activeBg: "#F1EDFF" },
 ];
 
 function StudentPaths({ onChoose }: { onChoose: (path: Path) => void }) {
@@ -736,7 +687,7 @@ function StudentChat({ path, focusActive: initFocus, focusSecs: initSecs, onFini
         <div className="px-4 pt-3 pb-24 flex flex-col gap-2" style={{ background: "var(--card)", borderTop: "1px solid var(--border)" }}>
           {showFinish && (
             <button onClick={onFinish} className="btn-bounce w-full py-3 text-sm font-bold rounded-xl"
-              style={{ background: "var(--secondary)", color: "var(--secondary-foreground)", border: "1.5px solid rgba(58,168,154,0.3)" }}>
+              style={{ background: "var(--secondary)", color: "var(--secondary-foreground)", border: "2px solid var(--border)" }}>
               Concluí o desafio!
             </button>
           )}
@@ -828,7 +779,7 @@ function StudentReflection({ onSend }: { onSend: () => void }) {
             {HELPED.map((h) => (
               <button key={h} onClick={() => toggleHelped(h)}
                 className="tap-scale px-4 py-2 rounded-full text-sm font-medium"
-                style={{ background: helped.has(h) ? "var(--accent)" : "var(--muted)", color: helped.has(h) ? "white" : "var(--foreground)" }}>
+                style={{ background: helped.has(h) ? "var(--accent)" : "var(--muted)", color: "var(--foreground)" }}>
                 {h}
               </button>
             ))}
@@ -851,10 +802,10 @@ function StudentReflection({ onSend }: { onSend: () => void }) {
 // ── Screen 7: Teacher Dashboard ───────────────────────────────────────────────
 
 const METRICS = [
-  { label: "Engajamento", value: "81%", sub: "participaram ativamente", color: "var(--primary)" },
-  { label: "Autonomia",   value: "74%", sub: "escolheram caminhos diferentes", color: "var(--accent)" },
-  { label: "Competência", value: "68%", sub: "avançaram de nível", color: "#A07CC5" },
-  { label: "Vínculo",     value: "72%", sub: "participaram em atividade colaborativa", color: "#4BAA6E" },
+  { label: "Engajamento", value: "81%", sub: "participaram ativamente", color: "#2F6BE8" },
+  { label: "Autonomia",   value: "74%", sub: "escolheram caminhos diferentes", color: "#A16A00" },
+  { label: "Competência", value: "68%", sub: "avançaram de nível", color: "#8A5CF0" },
+  { label: "Vínculo",     value: "72%", sub: "participaram em atividade colaborativa", color: "#1F8F5F" },
 ];
 
 function TeacherDashboard({ onBack }: { onBack: () => void }) {
@@ -866,14 +817,14 @@ function TeacherDashboard({ onBack }: { onBack: () => void }) {
             <p className="text-xs font-semibold mb-0.5" style={{ color: "var(--muted-foreground)" }}>PAINEL DO PROFESSOR</p>
             <h1 className="text-xl font-bold leading-tight">Mudanças climáticas</h1>
           </div>
-          <div className="px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5" style={{ background: "#EEF8F0", color: "#3D9A5C" }}>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 block" /> Sessão encerrada
+          <div className="px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5" style={{ background: "#E9FAF2", color: "#1F8F5F" }}>
+            <span className="w-1.5 h-1.5 rounded-full block" style={{ background: "#2FB67C" }} /> Sessão encerrada
           </div>
         </div>
 
         {/* Summary strip */}
         <div className="rounded-2xl p-4 mb-5 flex items-center justify-between" style={{ background: "var(--muted)" }}>
-          {[{ v: "28", l: "alunos", c: "var(--primary)" }, { v: "24", l: "participaram", c: "var(--accent)" }, { v: "19", l: "concluíram", c: "#4BAA6E" }].map((s, i, arr) => (
+          {[{ v: "28", l: "alunos", c: "#2F6BE8" }, { v: "24", l: "participaram", c: "#A16A00" }, { v: "19", l: "concluíram", c: "#1F8F5F" }].map((s, i, arr) => (
             <div key={s.l} className="flex items-center gap-4">
               <div className="text-center">
                 <p className="text-2xl font-bold" style={{ color: s.c }}>{s.v}</p>
@@ -899,7 +850,7 @@ function TeacherDashboard({ onBack }: { onBack: () => void }) {
         </div>
 
         {/* AI insight */}
-        <div className="rounded-2xl p-5 flex gap-3 mb-6" style={{ background: "var(--secondary)", border: "1.5px solid rgba(58,168,154,0.2)" }}>
+        <div className="rounded-2xl p-5 flex gap-3 mb-6" style={{ background: "var(--secondary)", border: "2px solid var(--border)" }}>
           <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "var(--ai)" }}>
             <QuestionBubble size={20} color="white" />
           </div>
@@ -915,10 +866,10 @@ function TeacherDashboard({ onBack }: { onBack: () => void }) {
         <div className="rounded-2xl p-4 mb-6" style={{ background: "var(--card)", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
           <p className="text-xs font-bold mb-4" style={{ color: "var(--muted-foreground)" }}>DISTRIBUIÇÃO POR CAMINHO</p>
           {[
-            { label: "Investigar", pct: 37, color: "#F59E0B" },
-            { label: "Colaborar",  pct: 29, color: "#8B5CF6" },
-            { label: "Resolver",   pct: 21, color: "var(--accent)" },
-            { label: "Criar",      pct: 13, color: "#D96B38" },
+            { label: "Investigar", pct: 37, color: "#F5B82E" },
+            { label: "Colaborar",  pct: 29, color: "#8E6CFF" },
+            { label: "Resolver",   pct: 21, color: "#2FB67C" },
+            { label: "Criar",      pct: 13, color: "#FF7A59" },
           ].map((r) => (
             <div key={r.label} className="flex items-center gap-3 mb-3 last:mb-0">
               <p className="text-xs w-16 shrink-0" style={{ color: "var(--foreground)" }}>{r.label}</p>
