@@ -3,7 +3,7 @@ import { isCorrectAnswer, type TutorProvider } from "./provider";
 import { TutorUnavailableError } from "./turn";
 
 export const DEFAULT_GEMINI_MODEL = "gemini-3.5-flash-lite";
-export const GEMINI_TIMEOUT_MS = 9_000;
+export const GEMINI_TIMEOUT_MS = 20_000;
 
 const SYSTEM_PROMPT = [
   "Você é um tutor socrático de matemática para estudantes do ensino médio brasileiro.",

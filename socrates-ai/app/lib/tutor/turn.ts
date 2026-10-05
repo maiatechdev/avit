@@ -2,7 +2,7 @@ import { findExercise, leaksAnswer, nextAction, nextExercise, type Exercise, typ
 import type { AttemptsStore } from "./attempts";
 import type { TutorProvider } from "./provider";
 
-export const PROVIDER_TIMEOUT_MS = 10_000;
+export const PROVIDER_TIMEOUT_MS = 22_000;
 
 export class TutorUnavailableError extends Error {}
 export class UnknownExerciseError extends Error {}
