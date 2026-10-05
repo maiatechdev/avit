@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import logoAvit from "@/imports/logoAvit.svg";
+import logoSocratesAi from "@/imports/logoSocratesAi.svg";
 
 type Screen =
   | "intro"
@@ -48,8 +48,8 @@ function Intro({ onEnter }: { onEnter: () => void }) {
         {/* Logo centered */}
         <div className="flex-1 flex flex-col items-center justify-center px-8 gap-8">
           <img
-            src={logoAvit}
-            alt="AVIT"
+            src={logoSocratesAi}
+            alt="Socrates AI"
             className="w-full object-contain"
             style={{ maxWidth: 300 }}
           />

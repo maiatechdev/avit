@@ -12,7 +12,7 @@ Brazilian public-school teachers and their K-12 students, using personal or shar
 
 ## Product Purpose
 
-AVIT turns a teacher's learning objective into a short, AI-guided classroom activity. The teacher states what the class should understand; each student works toward that same objective through an AI tutor conversation, then reflects, while the teacher gets a post-session view of how the class engaged. Success means students reason more deeply about the objective (not just retrieve an answer) and teachers get a legible signal of engagement, autonomy, competence, and relatedness across the class.
+Socrates AI turns a teacher's learning objective into a short, AI-guided classroom activity. The teacher states what the class should understand; each student works toward that same objective through an AI tutor conversation, then reflects, while the teacher gets a post-session view of how the class engaged. Success means students reason more deeply about the objective (not just retrieve an answer) and teachers get a legible signal of engagement, autonomy, competence, and relatedness across the class.
 
 ## Positioning
 
@@ -25,17 +25,17 @@ Teacher analytics (Engajamento / Autonomia / Competência / Vínculo) exist to m
 
 ## Operating Context
 
-- Brazil's Lei 15.100/2025 restricts personal phone use in schools; AVIT's sessions are explicitly framed in-product as sanctioned "active pedagogical use" under that law (persistent status banner). This is real operating context and rationale for the product's existence, but the user has confirmed it is not itself a core mechanism to protect in redesigns — treat it as a fact to preserve accurately, not a positioning angle to amplify.
+- Brazil's Lei 15.100/2025 restricts personal phone use in schools; Socrates AI's sessions are explicitly framed in-product as sanctioned "active pedagogical use" under that law (persistent status banner). This is real operating context and rationale for the product's existence, but the user has confirmed it is not itself a core mechanism to protect in redesigns — treat it as a fact to preserve accurately, not a positioning angle to amplify.
 - Flow: teacher states an objective and activates a session (QR code / short session code) → students join and choose a path → optional distraction-free "Modo Foco" timer → AI tutor chat working toward the objective → student reflection (feeling + what helped) → teacher dashboard with class-level metrics and an AI-generated insight.
 
 ## Capabilities and Constraints
 
-- Concept/prototype stage: no real classroom has used AVIT yet; this build is for validating the idea, not serving live sessions.
+- Concept/prototype stage: no real classroom has used Socrates AI yet; this build is for validating the idea, not serving live sessions.
 - Device/connectivity floor (shared or low-end Android phones, unreliable school wifi) is explicitly **undecided** — do not assume or design against a specific hardware/network baseline until this is confirmed.
 
 ## Brand Commitments
 
-Name: **AVIT**.
+Name: **Socrates AI**. Logo: arquivo `src/imports/logoSocratesAi.svg`, desenhado pelo usuário.
 
 ## Evidence on Hand
 

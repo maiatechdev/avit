@@ -1,5 +1,5 @@
 ---
-name: AVIT
+name: Socrates AI
 description: Trilhas de aprendizagem guiadas por IA socrática para salas de aula brasileiras
 colors:
   paper-cream: "#FDFAF5"
@@ -78,7 +78,7 @@ components:
     padding: "16px"
 ---
 
-# Design System: AVIT
+# Design System: Socrates AI
 
 ## Overview
 
