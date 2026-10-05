@@ -3,6 +3,7 @@ import logoSocratesAi from "@/imports/logoSocratesAi.svg";
 
 type Screen =
   | "intro"
+  | "student-join"
   | "teacher-activate"
   | "teacher-activated"
   | "student-paths"
@@ -10,6 +11,21 @@ type Screen =
   | "student-chat"
   | "student-reflection"
   | "teacher-dashboard";
+
+type Session = { id: string; code: string; objective: string };
+
+async function apiCreateSession(objective: string): Promise<Session> {
+  const res = await fetch("/api/sessions", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ objective }) });
+  if (!res.ok) throw new Error(`sessions ${res.status}`);
+  return (await res.json()) as Session;
+}
+
+async function apiJoinSession(code: string): Promise<{ id: string; objective: string }> {
+  const res = await fetch("/api/sessions/join", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ code }) });
+  if (res.status === 404) throw new Error("not_found");
+  if (!res.ok) throw new Error(`join ${res.status}`);
+  return (await res.json()) as { id: string; objective: string };
+}
 
 type Path = "investigar" | "criar" | "resolver" | "colaborar" | null;
 interface Message { role: "ai" | "student"; text: string; }
@@ -35,7 +51,7 @@ function Shell({ children, wide = false }: { children: React.ReactNode; wide?: b
 
 // ── Screen 0: Intro / Splash ──────────────────────────────────────────────────
 
-function Intro({ onEnter }: { onEnter: () => void }) {
+function Intro({ onEnter, onStudent }: { onEnter: () => void; onStudent: () => void }) {
   return (
     <div
       className="min-h-screen flex items-start justify-center"
@@ -81,6 +97,13 @@ function Intro({ onEnter }: { onEnter: () => void }) {
             }}
           >
             Entrar no app
+          </button>
+          <button
+            onClick={onStudent}
+            className="cartoon-btn w-full py-4 text-base font-extrabold"
+            style={{ background: "var(--card)", color: "var(--foreground)", fontFamily: "Nunito, sans-serif" }}
+          >
+            Sou aluno: entrar com código
           </button>
           <p
             className="text-center text-xs"
@@ -229,8 +252,21 @@ function SceneReflection() {
 
 // ── Screen 1: Teacher Activate ────────────────────────────────────────────────
 
-function TeacherActivate({ onActivate }: { onActivate: () => void }) {
+function TeacherActivate({ onActivate }: { onActivate: (session: Session) => void }) {
   const [objective, setObjective] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(false);
+  const activate = async () => {
+    setBusy(true);
+    setError(false);
+    try {
+      onActivate(await apiCreateSession(objective.trim()));
+    } catch {
+      setError(true);
+    } finally {
+      setBusy(false);
+    }
+  };
   return (
     <Shell wide>
       <div className="screen-enter flex flex-col min-h-[100svh] px-6 pt-6 pb-8 lg:mx-auto lg:max-w-2xl lg:w-full lg:py-12">
@@ -292,8 +328,8 @@ function TeacherActivate({ onActivate }: { onActivate: () => void }) {
           </div>
 
           <button
-            onClick={onActivate}
-            disabled={!objective.trim()}
+            onClick={activate}
+            disabled={!objective.trim() || busy}
             className="btn-bounce w-full py-4 text-base font-bold rounded-2xl"
             style={{
               background: objective.trim() ? "var(--primary)" : "var(--muted)",
@@ -301,8 +337,11 @@ function TeacherActivate({ onActivate }: { onActivate: () => void }) {
               letterSpacing: "0.01em",
             }}
           >
-            Ativar sessão pra turma
+            {busy ? "Criando sessão…" : "Ativar sessão pra turma"}
           </button>
+          {error && (
+            <p className="text-sm text-center" style={{ color: "#B42318" }}>Não consegui criar a sessão agora. Tente de novo.</p>
+          )}
         </div>
       </div>
     </Shell>
@@ -311,7 +350,7 @@ function TeacherActivate({ onActivate }: { onActivate: () => void }) {
 
 // ── Screen 2: Teacher Activated (QR) ─────────────────────────────────────────
 
-function TeacherActivated({ onViewDashboard }: { onViewDashboard: () => void }) {
+function TeacherActivated({ session, onViewDashboard }: { session: Session | null; onViewDashboard: () => void }) {
   return (
     <Shell wide>
       <div className="screen-enter flex flex-col min-h-[100svh] px-6 pt-6 pb-24 lg:mx-auto lg:max-w-lg lg:w-full lg:py-12">
@@ -344,7 +383,7 @@ function TeacherActivated({ onViewDashboard }: { onViewDashboard: () => void }) 
             </div>
             <div className="px-6 py-3 rounded-2xl text-center" style={{ background: "var(--muted)" }}>
               <p className="text-xs mb-1" style={{ color: "var(--muted-foreground)" }}>Código da sessão</p>
-              <p className="text-3xl font-bold tracking-[0.15em]" style={{ color: "var(--primary)" }}>AC-4782</p>
+              <p className="text-3xl font-bold tracking-[0.15em]" style={{ color: "var(--primary)" }}>{session?.code ?? "SOC-----"}</p>
             </div>
           </div>
 
@@ -353,7 +392,7 @@ function TeacherActivated({ onViewDashboard }: { onViewDashboard: () => void }) 
               <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" strokeWidth="2.5" />
             </svg>
             <p className="text-sm" style={{ color: "var(--secondary-foreground)" }}>
-              Objetivo: <strong>Compreender mudanças climáticas</strong>
+              Objetivo: <strong>{session?.objective ?? "—"}</strong>
             </p>
           </div>
         </div>
@@ -376,7 +415,67 @@ const PATHS = [
   { id: "colaborar",  Scene: SceneColaborar,  title: "Colaborar",  desc: "Desenvolver solução em grupo", activeBorder: "#8E6CFF", activeBg: "#F1EDFF" },
 ];
 
-function StudentPaths({ onChoose }: { onChoose: (path: Path) => void }) {
+function StudentJoin({ onJoined, onBack }: { onJoined: (session: Session) => void; onBack: () => void }) {
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const ready = code.trim().length > 0 && !busy;
+
+  const enter = async () => {
+    const normalized = code.trim().toUpperCase();
+    setBusy(true);
+    setError(null);
+    try {
+      const session = await apiJoinSession(normalized);
+      onJoined({ ...session, code: normalized });
+    } catch (error) {
+      setError(
+        error instanceof Error && error.message === "not_found"
+          ? "Não encontramos uma sessão com esse código. Confira com o professor."
+          : "Não consegui entrar agora. Tente de novo.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Shell>
+      <div className="screen-enter flex flex-col min-h-[100svh] px-6 pt-10 pb-24 lg:mx-auto lg:max-w-lg lg:w-full">
+        <button onClick={onBack} className="self-start text-sm font-bold mb-8" style={{ color: "var(--muted-foreground)" }}>
+          ← Voltar
+        </button>
+        <div className="cartoon-card p-6 flex flex-col gap-4">
+          <h1 className="text-2xl font-extrabold" style={{ color: "var(--foreground)" }}>Digite o código da sessão</h1>
+          <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
+            O professor mostra o código na tela, no formato SOC-1234.
+          </p>
+          <input
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && ready) enter(); }}
+            placeholder="SOC-1234"
+            autoCapitalize="characters"
+            aria-label="Código da sessão"
+            className="w-full text-2xl font-extrabold tracking-widest text-center py-4 rounded-2xl outline-none"
+            style={{ background: "var(--muted)", border: "2px solid var(--border)", color: "var(--foreground)" }}
+          />
+          {error && <p className="text-sm" style={{ color: "#B42318" }}>{error}</p>}
+          <button
+            onClick={enter}
+            disabled={!ready}
+            className="cartoon-btn w-full py-4 text-base font-extrabold"
+            style={{ background: ready ? "var(--primary)" : "var(--muted)", color: ready ? "#FFFFFF" : "var(--muted-foreground)" }}
+          >
+            {busy ? "Entrando…" : "Entrar na sessão"}
+          </button>
+        </div>
+      </div>
+    </Shell>
+  );
+}
+
+function StudentPaths({ objective, onChoose }: { objective: string; onChoose: (path: Path) => void }) {
   const [selected, setSelected] = useState<Path>(null);
 
   return (
@@ -389,7 +488,7 @@ function StudentPaths({ onChoose }: { onChoose: (path: Path) => void }) {
           </svg>
           <div>
             <p className="text-xs font-semibold mb-0.5" style={{ color: "var(--primary)" }}>OBJETIVO DE HOJE</p>
-            <p className="text-sm font-medium" style={{ color: "var(--foreground)" }}>Compreender mudanças climáticas</p>
+            <p className="text-sm font-medium" style={{ color: "var(--foreground)" }}>{objective}</p>
           </div>
         </div>
 
@@ -569,12 +668,12 @@ const OPENING_MESSAGE: Message = {
   text: "Oi! Vamos pensar juntos. Se f(x) = 2x + 3, quanto vale f(4)? Me conta como você pensaria para resolver.",
 };
 
-function StudentChat({ path, focusActive: initFocus, focusSecs: initSecs, onFinish }: { path: Path; focusActive: boolean; focusSecs: number; onFinish: () => void }) {
+function StudentChat({ sessionId, path, focusActive: initFocus, focusSecs: initSecs, onFinish }: { sessionId: string; path: Path; focusActive: boolean; focusSecs: number; onFinish: () => void }) {
   const [messages, setMessages] = useState<Message[]>([OPENING_MESSAGE]);
   const [input, setInput] = useState("");
   const [level, setLevel] = useState(1);
   const [sending, setSending] = useState(false);
-  const [sessionId] = useState(() => crypto.randomUUID());
+
   const [focusOn, setFocusOn] = useState(initFocus);
   const [secsLeft, setSecsLeft] = useState(initSecs);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -939,6 +1038,7 @@ const NAV_ITEMS: { screen: Screen; label: string }[] = [
 export default function App() {
   const [screen, setScreen] = useState<Screen>("intro");
   const [path, setPath] = useState<Path>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [focusActive, setFocusActive] = useState(false);
   const [focusSecs, setFocusSecs] = useState(0);
 
@@ -958,12 +1058,13 @@ export default function App() {
 
   return (
     <div className="relative">
-      {screen === "intro"              && <Intro onEnter={() => go("teacher-activate")} />}
-      {screen === "teacher-activate"   && <TeacherActivate onActivate={() => go("teacher-activated")} />}
-      {screen === "teacher-activated"  && <TeacherActivated onViewDashboard={() => go("teacher-dashboard")} />}
-      {screen === "student-paths"      && <StudentPaths onChoose={handleChoosePath} />}
+      {screen === "intro"              && <Intro onEnter={() => go("teacher-activate")} onStudent={() => go("student-join")} />}
+      {screen === "student-join"       && <StudentJoin onBack={() => go("intro")} onJoined={(s) => { setSession(s); go("student-paths"); }} />}
+      {screen === "teacher-activate"   && <TeacherActivate onActivate={(s) => { setSession(s); go("teacher-activated"); }} />}
+      {screen === "teacher-activated"  && <TeacherActivated session={session} onViewDashboard={() => go("teacher-dashboard")} />}
+      {screen === "student-paths"      && <StudentPaths objective={session?.objective ?? "Objetivo ainda não definido"} onChoose={handleChoosePath} />}
       {screen === "student-focus"      && <StudentFocus onContinue={handleFocusContinue} />}
-      {screen === "student-chat"       && <StudentChat path={path} focusActive={focusActive} focusSecs={focusSecs} onFinish={() => go("student-reflection")} />}
+      {screen === "student-chat"       && <StudentChat sessionId={session?.id ?? "sem-sessao"} path={path} focusActive={focusActive} focusSecs={focusSecs} onFinish={() => go("student-reflection")} />}
       {screen === "student-reflection" && <StudentReflection onSend={() => go("teacher-dashboard")} />}
       {screen === "teacher-dashboard"  && <TeacherDashboard onBack={() => go("teacher-activate")} />}
 
