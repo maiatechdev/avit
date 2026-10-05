@@ -1,0 +1,59 @@
+schema: 1
+story: '3.5'
+story_title: 'Identidade mínima (tokens de professor e de aluno)'
+gate: CONCERNS
+status_reason: 'Autenticação implementada e com testes unitários de tokens, mas o fluxo de autenticação não tem teste de integração e não foi verificado no navegador. Riscos aceitos para o protótipo: token em localStorage e sessões antigas sem painel.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-10-05T21:00:00-03:00'
+
+top_issues:
+  - id: AUTH-TEST-001
+    severity: medium
+    finding: 'resolveParticipant, isTeacherOf e os endpoints de check-in, participações, tutor e painel sem teste automatizado.'
+    suggested_owner: dev
+  - id: AUTH-STORAGE-001
+    severity: medium
+    finding: 'Tokens de professor e de aluno ficam em localStorage, acessível por qualquer script da página. Aceito no protótipo.'
+    suggested_owner: po
+  - id: AUTH-UI-001
+    severity: low
+    finding: 'Painel bloqueado e reentrada na sessão com o mesmo aparelho não verificados no navegador.'
+    suggested_owner: dev
+
+waiver: { active: false }
+
+quality_score: 80
+expires: '2026-10-19T00:00:00-03:00'
+
+evidence:
+  tests_reviewed: 49
+  risks_identified: 6
+  trace:
+    ac_covered: [1, 3, 4, 5, 6, 7]
+    ac_gaps: [2]
+
+nfr_validation:
+  security:
+    status: CONCERNS
+    notes: 'Token do professor e do aluno guardados como hash no servidor. Token bruto no localStorage (XSS). Comparação não é tempo constante (risco baixo). Sem limite de tentativas no endpoint de entrada, previsto na Story 3.8.'
+  performance:
+    status: CONCERNS
+    notes: 'Cada turno do tutor faz uma consulta a mais, pela chave primária de participants. Medir após o deploy.'
+  reliability:
+    status: PASS
+    notes: 'Falhas de armazenamento do navegador são tratadas com try/catch. Token inválido responde 401 com código estável.'
+  maintainability:
+    status: PASS
+    notes: 'Módulos separados (auth, participants, sessions/teacher). Nenhuma referência ao participantId do cliente restou.'
+
+recommendations:
+  immediate:
+    - action: 'Testar no navegador: dois alunos em dois aparelhos e painel aberto em outro navegador (deve mostrar estado bloqueado).'
+      refs: ['app/src/App.tsx', 'app/src/api/client.ts']
+    - action: 'Adicionar teste de integração do fluxo de autenticação em banco de desenvolvimento.'
+      refs: ['app/lib/participants/participants.ts', 'app/lib/sessions/teacher.ts']
+  future:
+    - action: 'Decidir se o token do professor sai do localStorage antes de uso com alunos reais.'
+      refs: ['app/src/api/client.ts']
+    - action: 'Limite de tentativas na entrada, na Story 3.8.'
+      refs: ['app/api/sessions/join/index.ts']
