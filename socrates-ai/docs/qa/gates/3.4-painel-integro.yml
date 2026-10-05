@@ -1,0 +1,53 @@
+schema: 1
+story: '3.4'
+story_title: 'Painel íntegro'
+gate: CONCERNS
+status_reason: 'Regra de competência e filtros corretos e testados em unidade, mas as consultas SQL do painel não têm teste automatizado e o painel não foi verificado no navegador. Sem bloqueio.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-10-05T20:30:00-03:00'
+
+top_issues:
+  - id: TEST-SQL-001
+    severity: medium
+    finding: 'Consultas de readDashboard sem teste automatizado; validadas só por execução de SELECT no banco real (sintaxe e tipos), sem checar contagens com dados.'
+    suggested_owner: dev
+  - id: UI-VERIFY-001
+    severity: low
+    finding: 'Mensagem de amostra insuficiente e painel com dados não verificados no navegador (desktop e celular).'
+    suggested_owner: dev
+
+waiver: { active: false }
+
+quality_score: 90
+expires: '2026-10-19T00:00:00-03:00'
+
+evidence:
+  tests_reviewed: 43
+  risks_identified: 2
+  trace:
+    ac_covered: [1, 2, 3, 5, 6]
+    ac_gaps: [4]
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'Sem mudança de superfície. Painel sem autenticação, já registrado na auditoria e tratado na Story 3.5.'
+  performance:
+    status: CONCERNS
+    notes: 'readDashboard executa DDL (CREATE TABLE IF NOT EXISTS) para duas tabelas a cada leitura.'
+  reliability:
+    status: CONCERNS
+    notes: 'AC 4 (sessão vazia sem erro) verificado só por leitura de código e pela consulta no banco. Sem teste de integração.'
+  maintainability:
+    status: PASS
+    notes: 'Regra de cálculo isolada em summarize(), com testes; ensureAttemptsTable reutilizada pelo store.'
+
+recommendations:
+  immediate:
+    - action: 'Verificar no navegador a amostra insuficiente e o painel com dados (desktop e celular) antes de marcar Done.'
+      refs: ['app/src/App.tsx']
+    - action: 'Adicionar teste de integração das consultas de readDashboard em banco de desenvolvimento.'
+      refs: ['app/lib/dashboard/summary.ts']
+  future:
+    - action: 'Mover o DDL de readDashboard para inicialização única, junto da limpeza da tabela antiga attempts.'
+      refs: ['app/lib/dashboard/summary.ts', 'app/lib/tutor/attempts.ts']
