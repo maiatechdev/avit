@@ -1,27 +1,32 @@
 import type { Exercise, TutorAction } from "./escada";
 
-export type ProviderReply = {
-  resultado: "correta" | "incorreta";
-  resposta_ao_aluno: string;
-};
-
 export interface TutorProvider {
   judge(studentAnswer: string, exercise: Exercise): Promise<"correta" | "incorreta">;
   reply(args: {
     action: TutorAction;
     exercise: Exercise;
+    next: Exercise;
     studentAnswer: string;
     wrongCount: number;
   }): Promise<string>;
 }
 
+const NEGATION = /\b(não|nao|nunca|errado|ou|talvez)\b|\?/i;
+
+export function isCorrectAnswer(studentAnswer: string, answer: string): boolean {
+  if (NEGATION.test(studentAnswer)) return false;
+  const numbers = (studentAnswer.match(/-?\d+(?:[.,]\d+)?/g) ?? []).map((n) => n.replace(",", "."));
+  if (numbers.length === 1) return numbers[0] === answer;
+  if (numbers.length === 2) return numbers[1] === answer && studentAnswer.includes("=");
+  return false;
+}
+
 export class StubProvider implements TutorProvider {
   async judge(studentAnswer: string, exercise: Exercise) {
-    const numbers = studentAnswer.match(/-?\d+(?:[.,]\d+)?/g) ?? [];
-    return numbers.some((n) => n.replace(",", ".") === exercise.answer) ? "correta" : "incorreta";
+    return isCorrectAnswer(studentAnswer, exercise.answer) ? "correta" : "incorreta";
   }
 
-  async reply({ action, exercise, wrongCount }: Parameters<TutorProvider["reply"]>[0]) {
+  async reply({ action, exercise, next, wrongCount }: Parameters<TutorProvider["reply"]>[0]) {
     if (action === "solved") {
       return "Isso mesmo! Agora explica com suas palavras como você chegou nesse resultado.";
     }
@@ -29,7 +34,7 @@ export class StubProvider implements TutorProvider {
       return [
         "Vamos juntos, passo a passo:",
         ...exercise.steps.map((step, i) => `${i + 1}. ${step}`),
-        "Agora tenta um exercício parecido: se f(x) = 3x + 1, quanto vale f(2)?",
+        `Agora tenta um parecido: ${next.statement}`,
       ].join("\n");
     }
     const hints = [

@@ -24,9 +24,10 @@ export default async function handler(request: Request): Promise<Response> {
     return json({ error: "invalid_json" }, 400);
   }
 
-  const { sessionId, exerciseId, message } = (body ?? {}) as Record<string, unknown>;
+  const { sessionId, participantId, exerciseId, message } = (body ?? {}) as Record<string, unknown>;
   if (
     !isNonEmptyString(sessionId, 64) ||
+    !isNonEmptyString(participantId, 64) ||
     !isNonEmptyString(exerciseId, 64) ||
     !isNonEmptyString(message, 1000)
   ) {
@@ -38,7 +39,7 @@ export default async function handler(request: Request): Promise<Response> {
 
   try {
     const result = await runTurn(
-      { sessionId, exerciseId, message },
+      { sessionId, participantId, exerciseId, message },
       { store: createNeonAttemptsStore(databaseUrl), provider: new StubProvider() },
     );
     return json(result);

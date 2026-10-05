@@ -18,10 +18,25 @@ export const EXERCISES: Exercise[] = [
       "Some 3 ao resultado: 8 + 3 = 11.",
     ],
   },
+  {
+    id: "f1-avaliacao-2",
+    statement: "Se f(x) = 3x + 1, quanto vale f(2)?",
+    answer: "7",
+    steps: [
+      "Substitua x por 2 na expressão: f(2) = 3 · 2 + 1.",
+      "Calcule a multiplicação primeiro: 3 · 2 = 6.",
+      "Some 1 ao resultado: 6 + 1 = 7.",
+    ],
+  },
 ];
 
 export function findExercise(id: string): Exercise | undefined {
   return EXERCISES.find((exercise) => exercise.id === id);
+}
+
+export function nextExercise(id: string): Exercise {
+  const index = EXERCISES.findIndex((exercise) => exercise.id === id);
+  return EXERCISES[(index + 1) % EXERCISES.length];
 }
 
 export type TutorAction = "hint" | "explain" | "solved";

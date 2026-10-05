@@ -1,4 +1,4 @@
-import { findExercise, leaksAnswer, nextAction, type Exercise, type TutorAction } from "./escada";
+import { findExercise, leaksAnswer, nextAction, nextExercise, type Exercise, type TutorAction } from "./escada";
 import type { AttemptsStore } from "./attempts";
 import type { TutorProvider } from "./provider";
 
@@ -7,13 +7,14 @@ export const PROVIDER_TIMEOUT_MS = 10_000;
 export class TutorUnavailableError extends Error {}
 export class UnknownExerciseError extends Error {}
 
-export type TurnInput = { sessionId: string; exerciseId: string; message: string };
+export type TurnInput = { sessionId: string; participantId: string; exerciseId: string; message: string };
 
 export type TurnResult = {
   action: TutorAction;
   resultado: "correta" | "incorreta";
   resposta_ao_aluno: string;
   wrongCount: number;
+  exerciseId: string;
 };
 
 const SAFE_FALLBACK_HINT =
@@ -43,7 +44,7 @@ export async function runTurn(
   if (!exercise) throw new UnknownExerciseError(input.exerciseId);
 
   const timeoutMs = deps.timeoutMs ?? PROVIDER_TIMEOUT_MS;
-  const state = await deps.store.get(input.sessionId, input.exerciseId);
+  const state = await deps.store.get(input.sessionId, input.participantId, input.exerciseId);
 
   if (state.solved) {
     return {
@@ -51,20 +52,20 @@ export async function runTurn(
       resultado: "correta",
       resposta_ao_aluno: "Esse exercício já está resolvido. Quer tentar um parecido?",
       wrongCount: 0,
+      exerciseId: nextExercise(input.exerciseId).id,
     };
   }
 
-  const resultado = await withTimeout(
-    deps.provider.judge(input.message, exercise),
-    timeoutMs,
-  );
+  const resultado = await withTimeout(deps.provider.judge(input.message, exercise), timeoutMs);
   const isCorrect = resultado === "correta";
   const decision = nextAction(state.wrongCount, isCorrect);
+  const next = nextExercise(input.exerciseId);
 
   let reply = await withTimeout(
     deps.provider.reply({
       action: decision.action,
       exercise,
+      next,
       studentAnswer: input.message,
       wrongCount: state.wrongCount,
     }),
@@ -75,7 +76,9 @@ export async function runTurn(
     reply = SAFE_FALLBACK_HINT;
   }
 
-  await deps.store.save(input.sessionId, input.exerciseId, {
+  const exerciseForNextTurn = decision.action === "explain" ? next.id : exercise.id;
+
+  await deps.store.save(input.sessionId, input.participantId, input.exerciseId, {
     wrongCount: decision.wrongCount,
     solved: decision.action === "solved",
   });
@@ -85,5 +88,6 @@ export async function runTurn(
     resultado,
     resposta_ao_aluno: reply,
     wrongCount: decision.wrongCount,
+    exerciseId: exerciseForNextTurn,
   };
 }

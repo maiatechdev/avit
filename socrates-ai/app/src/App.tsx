@@ -620,6 +620,7 @@ function StudentChat({ sessionId, mission, path, focusActive: initFocus, focusSe
   const [input, setInput] = useState("");
   const [level, setLevel] = useState(1);
   const [sending, setSending] = useState(false);
+  const [exerciseId, setExerciseId] = useState(EXERCISE_ID);
 
   const [focusOn, setFocusOn] = useState(initFocus);
   const [secsLeft, setSecsLeft] = useState(initSecs);
@@ -652,9 +653,10 @@ function StudentChat({ sessionId, mission, path, focusActive: initFocus, focusSe
     setInput("");
     setSending(true);
     try {
-      const res = await postJson("/api/tutor/turn", { sessionId, exerciseId: EXERCISE_ID, message: text });
+      const res = await postJson("/api/tutor/turn", { sessionId, participantId: participantIdentifier(), exerciseId, message: text });
       if (!res.ok) throw new Error(`tutor ${res.status}`);
-      const data = (await res.json()) as { action: string; resposta_ao_aluno: string };
+      const data = (await res.json()) as { action: string; resposta_ao_aluno: string; exerciseId: string };
+      setExerciseId(data.exerciseId);
       setMessages((p) => [...p, { role: "ai", text: data.resposta_ao_aluno }]);
       setLevel(data.action === "solved" ? 3 : 2);
     } catch {
