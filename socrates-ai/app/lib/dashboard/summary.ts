@@ -1,18 +1,24 @@
 import { neon } from "@neondatabase/serverless";
+import { ensureAttemptsTable } from "../tutor/attempts";
 
 export const PATHS = ["investigar", "criar", "resolver", "colaborar"] as const;
 export type PathId = (typeof PATHS)[number];
+
+// Abaixo deste número de alunos, percentuais falam de uma ou duas pessoas e não representam a turma.
+export const MIN_RESPONSES = 5;
 
 export type DashboardRaw = {
   students: number;
   chosen: number;
   paths: Partial<Record<PathId, number>>;
   stuck: number;
-  solvedExercises: number;
+  solvers: number;
 };
 
 export type Dashboard = {
   students: number;
+  enough: boolean;
+  required: number;
   engagement: number;
   autonomy: number;
   competence: number;
@@ -22,7 +28,7 @@ export type Dashboard = {
   suggestion: string;
 };
 
-const pct = (part: number, whole: number) => (whole === 0 ? 0 : Math.round((part / whole) * 100));
+const pct = (part: number, whole: number) => (whole === 0 ? 0 : Math.min(100, Math.round((part / whole) * 100)));
 
 export function suggestionFor(stuckShare: number, engagement: number): string {
   if (stuckShare >= 40) return "Retome o conceito de função antes de avançar com exercícios.";
@@ -33,17 +39,20 @@ export function suggestionFor(stuckShare: number, engagement: number): string {
 export function summarize(raw: DashboardRaw): Dashboard {
   const pathCounts = Object.fromEntries(PATHS.map((p) => [p, raw.paths[p] ?? 0])) as Record<PathId, number>;
   const distinctPaths = PATHS.filter((p) => pathCounts[p] > 0).length;
+  const enough = raw.students >= MIN_RESPONSES;
   const engagement = pct(raw.chosen, raw.students);
   const stuckShare = pct(raw.stuck, raw.students);
   return {
     students: raw.students,
+    enough,
+    required: MIN_RESPONSES,
     engagement,
     autonomy: pct(distinctPaths, PATHS.length),
-    competence: Math.min(100, pct(raw.solvedExercises, raw.students)),
+    competence: pct(raw.solvers, raw.students),
     bond: pct(pathCounts.colaborar, raw.students),
     pathCounts,
     stuckShare,
-    suggestion: suggestionFor(stuckShare, engagement),
+    suggestion: enough ? suggestionFor(stuckShare, engagement) : "Aguarde mais respostas para receber uma sugestão.",
   };
 }
 
@@ -73,16 +82,25 @@ export async function readDashboard(databaseUrl: string, sessionId: string): Pro
   if (exists.length === 0) return null;
 
   await ensureParticipationsTable(databaseUrl);
+  await ensureAttemptsTable(databaseUrl);
 
+  // Só conta quem fez check-in: escolhas e soluções de quem não entrou pelo check-in não entram nos percentuais.
   const [students] = await sql`
     SELECT COUNT(*)::int AS n, COUNT(*) FILTER (WHERE difficulty = 'nao_entendi')::int AS stuck
     FROM checkins WHERE session_id = ${sessionId}`;
   const [chosen] = await sql`
-    SELECT COUNT(*)::int AS n FROM participations WHERE session_id = ${sessionId}`;
+    SELECT COUNT(*)::int AS n FROM participations p
+    WHERE p.session_id = ${sessionId}
+      AND EXISTS (SELECT 1 FROM checkins c WHERE c.session_id = p.session_id AND c.participant_id = p.participant_id)`;
   const pathRows = await sql`
-    SELECT path, COUNT(*)::int AS n FROM participations WHERE session_id = ${sessionId} GROUP BY path`;
-  const [solved] = await sql`
-    SELECT COUNT(*) FILTER (WHERE solved)::int AS n FROM attempts WHERE session_id = ${sessionId}`;
+    SELECT p.path, COUNT(*)::int AS n FROM participations p
+    WHERE p.session_id = ${sessionId}
+      AND EXISTS (SELECT 1 FROM checkins c WHERE c.session_id = p.session_id AND c.participant_id = p.participant_id)
+    GROUP BY p.path`;
+  const [solvers] = await sql`
+    SELECT COUNT(DISTINCT a.participant_id)::int AS n FROM participant_attempts a
+    WHERE a.session_id = ${sessionId} AND a.solved
+      AND EXISTS (SELECT 1 FROM checkins c WHERE c.session_id = a.session_id AND c.participant_id = a.participant_id)`;
 
   const paths: Partial<Record<PathId, number>> = {};
   for (const row of pathRows as { path: string; n: number }[]) {
@@ -95,6 +113,6 @@ export async function readDashboard(databaseUrl: string, sessionId: string): Pro
     chosen: (chosen as { n: number }).n,
     paths,
     stuck: s.stuck,
-    solvedExercises: (solved as { n: number }).n,
+    solvers: (solvers as { n: number }).n,
   };
 }

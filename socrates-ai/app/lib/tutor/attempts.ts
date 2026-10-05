@@ -7,20 +7,25 @@ export interface AttemptsStore {
   save(sessionId: string, participantId: string, exerciseId: string, state: AttemptState): Promise<void>;
 }
 
+export async function ensureAttemptsTable(databaseUrl: string): Promise<void> {
+  const sql = neon(databaseUrl);
+  await sql`
+    CREATE TABLE IF NOT EXISTS participant_attempts (
+      session_id      TEXT        NOT NULL,
+      participant_id  TEXT        NOT NULL,
+      exercise_id     TEXT        NOT NULL,
+      wrong_count     INTEGER     NOT NULL DEFAULT 0,
+      solved          BOOLEAN     NOT NULL DEFAULT FALSE,
+      updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+      PRIMARY KEY (session_id, participant_id, exercise_id)
+    )`;
+}
+
 export function createNeonAttemptsStore(databaseUrl: string): AttemptsStore {
   const sql = neon(databaseUrl);
   let schemaReady: Promise<unknown> | undefined;
   const ensureSchema = () => {
-    schemaReady ??= sql`
-      CREATE TABLE IF NOT EXISTS participant_attempts (
-        session_id      TEXT        NOT NULL,
-        participant_id  TEXT        NOT NULL,
-        exercise_id     TEXT        NOT NULL,
-        wrong_count     INTEGER     NOT NULL DEFAULT 0,
-        solved          BOOLEAN     NOT NULL DEFAULT FALSE,
-        updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-        PRIMARY KEY (session_id, participant_id, exercise_id)
-      )`;
+    schemaReady ??= ensureAttemptsTable(databaseUrl);
     return schemaReady;
   };
 

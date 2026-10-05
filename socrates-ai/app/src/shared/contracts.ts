@@ -5,6 +5,8 @@ export interface Message { role: "ai" | "student"; text: string; }
 
 export type DashboardData = {
   students: number;
+  enough: boolean;
+  required: number;
   engagement: number;
   autonomy: number;
   competence: number;

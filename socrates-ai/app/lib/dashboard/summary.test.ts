@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { summarize, suggestionFor } from "./summary";
+import { MIN_RESPONSES, summarize, suggestionFor } from "./summary";
 
-const base = { students: 10, chosen: 8, paths: { investigar: 4, criar: 2, colaborar: 2 }, stuck: 1, solvedExercises: 6 };
+const base = { students: 10, chosen: 8, paths: { investigar: 4, criar: 2, colaborar: 2 }, stuck: 1, solvers: 6 };
 
 describe("summarize", () => {
   it("calcula engajamento, autonomia, competência e vínculo", () => {
@@ -14,13 +14,28 @@ describe("summarize", () => {
   });
 
   it("não divide por zero sem alunos", () => {
-    const d = summarize({ students: 0, chosen: 0, paths: {}, stuck: 0, solvedExercises: 0 });
+    const d = summarize({ students: 0, chosen: 0, paths: {}, stuck: 0, solvers: 0 });
     expect(d.engagement).toBe(0);
     expect(d.competence).toBe(0);
+    expect(d.enough).toBe(false);
   });
 
-  it("limita competência a 100%", () => {
-    expect(summarize({ ...base, solvedExercises: 50 }).competence).toBe(100);
+  it("competência conta alunos que resolveram pelo menos um exercício, não exercícios", () => {
+    expect(summarize({ ...base, solvers: 4 }).competence).toBe(40);
+  });
+
+  it("nunca passa de 100%, mesmo com dados inconsistentes", () => {
+    const d = summarize({ ...base, chosen: 25, solvers: 25 });
+    expect(d.engagement).toBe(100);
+    expect(d.competence).toBe(100);
+  });
+
+  it("marca amostra insuficiente abaixo do mínimo de respostas", () => {
+    const small = summarize({ ...base, students: MIN_RESPONSES - 1 });
+    expect(small.enough).toBe(false);
+    expect(small.required).toBe(MIN_RESPONSES);
+    expect(small.suggestion).toContain("Aguarde");
+    expect(summarize({ ...base, students: MIN_RESPONSES }).enough).toBe(true);
   });
 });
 

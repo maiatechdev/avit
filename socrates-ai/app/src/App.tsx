@@ -906,7 +906,7 @@ function TeacherDashboard({ session, onBack }: { session: Session | null; onBack
     ? [
         { label: "Engajamento", value: data.engagement, sub: "escolheram uma trilha", color: "#2F6BE8" },
         { label: "Autonomia", value: data.autonomy, sub: "trilhas diferentes usadas pela turma", color: "#A16A00" },
-        { label: "Competência", value: data.competence, sub: "exercícios resolvidos por aluno", color: "#8A5CF0" },
+        { label: "Competência", value: data.competence, sub: "alunos que resolveram pelo menos um exercício", color: "#8A5CF0" },
         { label: "Vínculo", value: data.bond, sub: "escolheram colaborar", color: "#1F8F5F" },
       ]
     : [];
@@ -947,7 +947,16 @@ function TeacherDashboard({ session, onBack }: { session: Session | null; onBack
           </div>
         )}
 
-        {shownStatus === "ready" && data && (
+        {shownStatus === "ready" && data && !data.enough && (
+          <div className="cartoon-card p-6 mb-6">
+            <p className="text-base font-bold">Ainda são poucas respostas para mostrar percentuais.</p>
+            <p className="text-sm mt-1" style={{ color: "var(--muted-foreground)" }}>
+              {data.students} de {data.required} alunos já fizeram o check-in. Os números aparecem quando a turma chegar a {data.required}.
+            </p>
+          </div>
+        )}
+
+        {shownStatus === "ready" && data && data.enough && (
           <>
             <div className="rounded-2xl p-4 mb-5 flex items-center justify-between" style={{ background: "var(--muted)", border: "2px solid var(--border)" }}>
               <div className="text-center">
