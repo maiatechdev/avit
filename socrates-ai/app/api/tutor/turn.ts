@@ -1,5 +1,6 @@
 import { createNeonAttemptsStore } from "../../lib/tutor/attempts";
 import { StubProvider } from "../../lib/tutor/provider";
+import { GeminiProvider } from "../../lib/tutor/gemini";
 import { runTurn, TutorUnavailableError, UnknownExerciseError } from "../../lib/tutor/turn";
 
 export const config = { runtime: "edge" };
@@ -12,6 +13,11 @@ const json = (body: unknown, status = 200) =>
 
 function isNonEmptyString(value: unknown, max: number): value is string {
   return typeof value === "string" && value.trim().length > 0 && value.length <= max;
+}
+
+function chooseProvider() {
+  const key = process.env.GEMINI_API_KEY;
+  return key ? new GeminiProvider(key, process.env.GEMINI_MODEL) : new StubProvider();
 }
 
 export default async function handler(request: Request): Promise<Response> {
@@ -40,7 +46,7 @@ export default async function handler(request: Request): Promise<Response> {
   try {
     const result = await runTurn(
       { sessionId, participantId, exerciseId, message },
-      { store: createNeonAttemptsStore(databaseUrl), provider: new StubProvider() },
+      { store: createNeonAttemptsStore(databaseUrl), provider: chooseProvider() },
     );
     return json(result);
   } catch (error) {
