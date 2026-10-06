@@ -746,12 +746,10 @@ function StudentChat({ sessionId, objective, mission, path, focusActive: initFoc
 
         {/* Input bar */}
         <div className="px-4 pt-3 pb-4 flex flex-col gap-2" style={{ background: "var(--card)", borderTop: "1px solid var(--border)" }}>
-          {showFinish && (
-            <button onClick={onFinish} className="btn-bounce w-full py-3 text-sm font-bold rounded-xl"
-              style={{ background: "var(--secondary)", color: "var(--secondary-foreground)", border: "2px solid var(--border)" }}>
-              Concluí o desafio!
-            </button>
-          )}
+          <button onClick={onFinish} className="btn-bounce w-full py-3 text-sm font-bold rounded-xl"
+            style={{ background: showFinish ? "var(--secondary)" : "var(--muted)", color: showFinish ? "var(--secondary-foreground)" : "var(--foreground)", border: "2px solid var(--border)" }}>
+            {showFinish ? "Concluí o desafio!" : "Encerrar conversa"}
+          </button>
           <div className="flex items-end gap-2">
             <textarea value={input} onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
