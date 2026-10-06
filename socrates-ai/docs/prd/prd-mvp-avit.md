@@ -127,7 +127,7 @@ As stories serão criadas pelo @sm a partir de cada épico, seguindo o fluxo Sto
 1. **Provedor de IA:** Google Gemini (AI Studio), plano gratuito.
 2. **Hospedagem do backend:** Vercel, com funções serverless, no mesmo projeto do frontend.
 3. **Tópico de Matemática da demo:** funções do 1º grau.
-4. **Dados:** apenas dados fictícios criados pela equipe; nenhum dado pessoal de aluno é coletado.
+4. **Dados:** a apresentação usa apenas dados fictícios criados pela equipe. Quando houver alunos reais, o app guarda o código do aparelho (só o hash), o check-in, a trilha escolhida e a quantidade de tentativas por exercício, por até 90 dias ou até a exclusão pelo professor. O texto das mensagens do chat não é gravado; é enviado ao Gemini para gerar a resposta. Ver `docs/privacidade/registro-de-impacto.md`.
 5. **Público:** apenas a banca da disciplina; sem alunos usando o app ao vivo.
 6. **XP e níveis:** versão simplificada. Níveis 1/2/3 calculados pelo chat e XP fixo por desafio concluído; sem ofensiva e sem ranking.
 

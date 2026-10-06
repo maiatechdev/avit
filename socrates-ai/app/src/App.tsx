@@ -901,9 +901,9 @@ function PrivacyPage({ onBack }: { onBack: () => void }) {
           Esta é uma versão de demonstração. Os dados abaixo são os que o app realmente guarda.
         </p>
         <div className="flex flex-col gap-4">
-          {section("O que é guardado", "O código e o objetivo da sessão, as respostas do check-in (dificuldade, tempo disponível e sentimento), a trilha escolhida, as mensagens trocadas com o tutor e um código aleatório do aparelho que liga essas respostas à sessão. Não pedimos nome, e-mail, documento nem foto.")}
+          {section("O que é guardado", "O código e o objetivo da sessão, as respostas do check-in (dificuldade, tempo disponível e sentimento), a trilha escolhida, a quantidade de tentativas em cada exercício e um código aleatório do aparelho que liga essas respostas à sessão. Não pedimos nome, e-mail, documento nem foto.")}
           {section("Quem vê", "O professor da sessão vê apenas os totais da turma, no painel. Cada aluno vê só a própria sessão. Ninguém vê as respostas de outro aluno.")}
-          {section("Tutor de IA", "As mensagens que você escreve no chat são enviadas ao serviço de IA do Google (Gemini) para gerar a resposta do tutor.")}
+          {section("Tutor de IA", "As mensagens que você escreve no chat são enviadas ao serviço de IA do Google (Gemini) para gerar a resposta do tutor. O app não grava o texto dessas mensagens.")}
           {section("Por quanto tempo", "Os dados de cada sessão são apagados automaticamente após 90 dias. O professor também pode apagar os dados da turma antes, pelo botão no painel.")}
           {section("Uso pedagógico", "O app é de uso pedagógico mediado pelo professor, conforme a Lei 15.100/2025. Dúvidas sobre os dados da turma devem ser levadas ao professor responsável.")}
         </div>
