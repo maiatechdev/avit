@@ -27,6 +27,25 @@ export async function apiEraseSession(sessionId: string): Promise<void> {
   if (!res.ok) throw new Error(`erase ${res.status}`);
 }
 
+// Chaves da versão anterior, que guardavam os tokens no localStorage. Não são mais usadas.
+export function isLegacyCredentialKey(key: string): boolean {
+  return key.startsWith("socrates-teacher:") || key.startsWith("socrates-participant:");
+}
+
+// Remove as credenciais antigas deste navegador. Falhas de armazenamento são ignoradas.
+export function clearLegacyCredentials(): void {
+  try {
+    const keys: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && isLegacyCredentialKey(key)) keys.push(key);
+    }
+    keys.forEach((key) => localStorage.removeItem(key));
+  } catch {
+    // Sem armazenamento disponível, não há o que limpar.
+  }
+}
+
 export function postJson(path: string, body: unknown): Promise<Response> {
   return fetch(path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
 }

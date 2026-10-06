@@ -3,7 +3,7 @@ import { Shell } from "./components/Shell";
 import { QuestionBubble, Toggle, Confetti } from "./components/primitives";
 import { SceneInvestigar, SceneCriar, SceneResolver, SceneColaborar, SceneReflection } from "./components/scenes";
 import type { Session, Path, Message, DashboardData } from "./shared/contracts";
-import { apiCreateSession, apiEraseSession, apiJoinSession, postJson, getRequest } from "./api/client";
+import { apiCreateSession, apiEraseSession, apiJoinSession, postJson, getRequest, clearLegacyCredentials } from "./api/client";
 import { codeFromSearch, entryFor, needsSession, ROUTES, screenFromPath, type Screen } from "./shared/routes";
 import QRCode from "qrcode";
 import logoSocratesAi from "@/imports/logoSocratesAi.svg";
@@ -1146,6 +1146,9 @@ export default function App() {
   useEffect(() => {
     saveState(session ? { session, mission, path } : null);
   }, [session, mission, path]);
+
+  // Tokens da versão anterior, guardados no localStorage, saem deste navegador na primeira abertura.
+  useEffect(() => { clearLegacyCredentials(); }, []);
 
   // Voltar e avançar do navegador trocam a tela conforme a URL.
   useEffect(() => {
