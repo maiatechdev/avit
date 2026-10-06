@@ -682,7 +682,7 @@ function StudentChat({ sessionId, objective, mission, path, focusActive: initFoc
   return (
     <Shell wide>
       <div className="screen-enter flex flex-col lg:flex-row h-[100svh]">
-        <div className="flex flex-col flex-1 min-w-0 min-h-0 lg:mx-auto lg:max-w-3xl lg:w-full">
+        <div className="flex flex-col flex-1 min-w-0 min-h-0">
         {/* Header */}
         <div className="px-5 pt-4 pb-4 flex flex-col gap-3" style={{ background: "var(--card)", borderBottom: "1px solid var(--border)" }}>
           <button onClick={onBack} className="self-start text-sm font-bold py-1" style={{ color: "var(--muted-foreground)" }}>← Voltar</button>
@@ -717,6 +717,7 @@ function StudentChat({ sessionId, objective, mission, path, focusActive: initFoc
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3 scrollbar-hide">
+         <div className="flex flex-col gap-3 w-full lg:max-w-3xl lg:mx-auto">
           {messages.map((m, i) => (
             <div key={i} className={`flex ${m.role === "student" ? "justify-end" : "justify-start"}`}>
               {m.role === "ai" && (
@@ -740,6 +741,7 @@ function StudentChat({ sessionId, objective, mission, path, focusActive: initFoc
             </div>
           ))}
           <div ref={bottomRef} />
+         </div>
         </div>
 
         {/* Input bar */}
