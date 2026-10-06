@@ -47,20 +47,25 @@ export interface CheckinStore {
   save(checkin: Checkin): Promise<void>;
 }
 
+export async function ensureCheckinsTable(databaseUrl: string): Promise<void> {
+  const sql = neon(databaseUrl);
+  await sql`
+    CREATE TABLE IF NOT EXISTS checkins (
+      session_id      TEXT        NOT NULL,
+      participant_id  TEXT        NOT NULL,
+      difficulty      TEXT        NOT NULL,
+      time_available  TEXT        NOT NULL,
+      feeling         TEXT        NOT NULL,
+      created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+      PRIMARY KEY (session_id, participant_id)
+    )`;
+}
+
 export function createNeonCheckinStore(databaseUrl: string): CheckinStore {
   const sql = neon(databaseUrl);
   let schemaReady: Promise<unknown> | undefined;
   const ensureSchema = () => {
-    schemaReady ??= sql`
-      CREATE TABLE IF NOT EXISTS checkins (
-        session_id      TEXT        NOT NULL,
-        participant_id  TEXT        NOT NULL,
-        difficulty      TEXT        NOT NULL,
-        time_available  TEXT        NOT NULL,
-        feeling         TEXT        NOT NULL,
-        created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-        PRIMARY KEY (session_id, participant_id)
-      )`;
+    schemaReady ??= ensureCheckinsTable(databaseUrl);
     return schemaReady;
   };
 

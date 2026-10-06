@@ -20,6 +20,12 @@ describe("área e sessão", () => {
     expect(entryFor("teacher-dashboard")).toBe("teacher-activate");
     expect(entryFor("student-chat")).toBe("student-join");
     expect(entryFor("intro")).toBe("intro");
+    expect(entryFor("privacy")).toBe("intro");
+  });
+
+  it("a política de privacidade é pública: não exige sessão", () => {
+    expect(screenFromPath("/privacidade")).toBe("privacy");
+    expect(needsSession("privacy")).toBe(false);
   });
 
   it("painel e fluxo do aluno exigem sessão; entrada e ativação não", () => {

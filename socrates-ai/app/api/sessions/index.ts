@@ -1,5 +1,6 @@
 import { createNeonSessionsStore } from "../../lib/sessions/store";
 import { createSession, SessionCodeCollisionError, validateObjective } from "../../lib/sessions/service";
+import { purgeExpired } from "../../lib/privacy/retention";
 
 export const config = { runtime: "edge" };
 
@@ -27,6 +28,8 @@ export default async function handler(request: Request): Promise<Response> {
 
   try {
     const session = await createSession(objective, createNeonSessionsStore(databaseUrl));
+    // Limpeza do prazo de retenção a cada criação de sessão. Se falhar, a sessão nova ainda é criada.
+    await purgeExpired(databaseUrl).catch(() => undefined);
     return json(session, 201);
   } catch (error) {
     if (error instanceof SessionCodeCollisionError) return json({ error: "code_unavailable" }, 503);

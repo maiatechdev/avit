@@ -3,7 +3,7 @@ import { Shell } from "./components/Shell";
 import { QuestionBubble, Toggle, Confetti } from "./components/primitives";
 import { SceneInvestigar, SceneCriar, SceneResolver, SceneColaborar, SceneReflection } from "./components/scenes";
 import type { Session, Path, Message, DashboardData } from "./shared/contracts";
-import { apiCreateSession, apiJoinSession, postJson, getRequest, participantTokenFor, teacherTokenFor } from "./api/client";
+import { apiCreateSession, apiEraseSession, apiJoinSession, postJson, getRequest, participantTokenFor, teacherTokenFor } from "./api/client";
 import { codeFromSearch, entryFor, needsSession, ROUTES, screenFromPath, type Screen } from "./shared/routes";
 import QRCode from "qrcode";
 import logoSocratesAi from "@/imports/logoSocratesAi.svg";
@@ -25,7 +25,7 @@ function fmt(s: number) {
 
 // ── Screen 0: Intro / Splash ──────────────────────────────────────────────────
 
-function Intro({ onEnter, onStudent }: { onEnter: () => void; onStudent: () => void }) {
+function Intro({ onEnter, onStudent, onPrivacy }: { onEnter: () => void; onStudent: () => void; onPrivacy: () => void }) {
   return (
     <div
       className="min-h-screen flex items-start justify-center"
@@ -85,6 +85,9 @@ function Intro({ onEnter, onStudent }: { onEnter: () => void; onStudent: () => v
           >
             Uso pedagógico mediado — Lei 15.100/2025
           </p>
+          <button onClick={onPrivacy} className="text-center text-xs font-bold underline" style={{ color: "var(--muted-foreground)" }}>
+            Política de privacidade
+          </button>
         </div>
       </div>
     </div>
@@ -878,12 +881,57 @@ function StudentReflection({ onSend }: { onSend: () => void }) {
   );
 }
 
+// ── Política de privacidade: o que é guardado, quem vê e por quanto tempo ──────
+
+function PrivacyPage({ onBack }: { onBack: () => void }) {
+  const section = (title: string, text: string) => (
+    <div className="cartoon-card p-5 flex flex-col gap-1.5">
+      <h2 className="text-base font-extrabold">{title}</h2>
+      <p className="text-sm leading-relaxed" style={{ color: "var(--secondary-foreground)" }}>{text}</p>
+    </div>
+  );
+  return (
+    <Shell>
+      <div className="screen-enter flex flex-col min-h-[100svh] px-5 pt-6 pb-8 lg:mx-auto lg:max-w-2xl lg:w-full">
+        <BackLink onClick={onBack} />
+        <h1 className="text-2xl font-extrabold mb-1">Política de privacidade</h1>
+        <p className="text-sm mb-6" style={{ color: "var(--muted-foreground)" }}>
+          Esta é uma versão de demonstração. Os dados abaixo são os que o app realmente guarda.
+        </p>
+        <div className="flex flex-col gap-4">
+          {section("O que é guardado", "O código e o objetivo da sessão, as respostas do check-in (dificuldade, tempo disponível e sentimento), a trilha escolhida, as mensagens trocadas com o tutor e um código aleatório do aparelho que liga essas respostas à sessão. Não pedimos nome, e-mail, documento nem foto.")}
+          {section("Quem vê", "O professor da sessão vê apenas os totais da turma, no painel. Cada aluno vê só a própria sessão. Ninguém vê as respostas de outro aluno.")}
+          {section("Tutor de IA", "As mensagens que você escreve no chat são enviadas ao serviço de IA do Google (Gemini) para gerar a resposta do tutor.")}
+          {section("Por quanto tempo", "Os dados de cada sessão são apagados automaticamente após 90 dias. O professor também pode apagar os dados da turma antes, pelo botão no painel.")}
+          {section("Uso pedagógico", "O app é de uso pedagógico mediado pelo professor, conforme a Lei 15.100/2025. Dúvidas sobre os dados da turma devem ser levadas ao professor responsável.")}
+        </div>
+      </div>
+    </Shell>
+  );
+}
+
 // ── Screen 7: Teacher Dashboard ───────────────────────────────────────────────
 
 
-function TeacherDashboard({ session, onBack }: { session: Session | null; onBack: () => void }) {
+function TeacherDashboard({ session, onBack, onErased }: { session: Session | null; onBack: () => void; onErased: () => void }) {
   const [data, setData] = useState<DashboardData | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "empty" | "error" | "locked">("loading");
+  const [confirmErase, setConfirmErase] = useState(false);
+  const [erasing, setErasing] = useState(false);
+  const [eraseError, setEraseError] = useState(false);
+
+  const erase = async () => {
+    if (!session) return;
+    setErasing(true);
+    setEraseError(false);
+    try {
+      await apiEraseSession(session.code, session.id);
+      onErased();
+    } catch {
+      setEraseError(true);
+      setErasing(false);
+    }
+  };
 
   useEffect(() => {
     if (!session) return;
@@ -1026,6 +1074,31 @@ function TeacherDashboard({ session, onBack }: { session: Session | null; onBack
           </>
         )}
 
+        {session && shownStatus !== "locked" && (
+          <div className="mb-4">
+            {!confirmErase ? (
+              <button onClick={() => setConfirmErase(true)} className="text-sm font-bold underline" style={{ color: "#B42318" }}>
+                Apagar dados desta turma
+              </button>
+            ) : (
+              <div className="cartoon-card p-5 flex flex-col gap-3">
+                <p className="text-sm">Isso apaga a sessão, os check-ins, as trilhas e as conversas de todos os alunos. Não dá para desfazer.</p>
+                <div className="flex gap-2">
+                  <button onClick={erase} disabled={erasing} className="cartoon-btn px-4 py-2.5 text-sm font-extrabold"
+                    style={{ background: "#B42318", color: "#FFFFFF" }}>
+                    {erasing ? "Apagando…" : "Sim, apagar"}
+                  </button>
+                  <button onClick={() => setConfirmErase(false)} disabled={erasing} className="cartoon-btn px-4 py-2.5 text-sm font-extrabold"
+                    style={{ background: "var(--card)", color: "var(--foreground)" }}>
+                    Cancelar
+                  </button>
+                </div>
+                {eraseError && <p className="text-sm" style={{ color: "#B42318" }}>Não consegui apagar agora. Tente de novo.</p>}
+              </div>
+            )}
+          </div>
+        )}
+
         <button onClick={onBack} className="cartoon-btn w-full py-4 text-base font-extrabold"
           style={{ background: "var(--primary)", color: "#FFFFFF" }}>
           Nova sessão
@@ -1109,7 +1182,8 @@ export default function App() {
 
   return (
     <div className="relative">
-      {screen === "intro"              && <Intro onEnter={() => go("teacher-activate")} onStudent={() => go("student-join")} />}
+      {screen === "intro"              && <Intro onEnter={() => go("teacher-activate")} onStudent={() => go("student-join")} onPrivacy={() => go("privacy")} />}
+      {screen === "privacy"            && <PrivacyPage onBack={() => go("intro")} />}
       {screen === "student-join"       && <StudentJoin onBack={() => go("intro")} onJoined={(s) => { setSession(s); go("student-checkin"); }} />}
       {screen === "student-checkin"    && <StudentCheckin sessionId={session?.id ?? ""} code={session?.code ?? ""} onBack={() => go("student-join")} onDone={(m) => { setMission(m); go("student-paths"); }} />}
       {screen === "teacher-activate"   && <TeacherActivate onActivate={(s) => { setSession(s); go("teacher-activated"); }} onBack={() => go("intro")} />}
@@ -1119,7 +1193,7 @@ export default function App() {
       {screen === "student-chat"       && <StudentChat sessionId={session?.id ?? "sem-sessao"} code={session?.code ?? ""} mission={mission} path={path} focusActive={focusActive} focusSecs={focusSecs} onBack={() => go("student-focus")} onFinish={() => go("student-reflection")} />}
       {/* Ao terminar, o aluno volta à entrada: o painel é só do professor. */}
       {screen === "student-reflection" && <StudentReflection onSend={() => { saveState(null); setSession(null); go("intro"); }} />}
-      {screen === "teacher-dashboard"  && <TeacherDashboard session={session} onBack={() => go("teacher-activated")} />}
+      {screen === "teacher-dashboard"  && <TeacherDashboard session={session} onBack={() => go("teacher-activated")} onErased={() => { saveState(null); setSession(null); go("intro"); }} />}
     </div>
   );
 }

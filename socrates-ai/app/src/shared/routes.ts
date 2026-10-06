@@ -10,10 +10,12 @@ export type Screen =
   | "student-paths"
   | "student-focus"
   | "student-chat"
-  | "student-reflection";
+  | "student-reflection"
+  | "privacy";
 
 export const ROUTES: Record<Screen, string> = {
   intro: "/",
+  privacy: "/privacidade",
   "teacher-activate": "/professor",
   "teacher-activated": "/professor/sessao",
   "teacher-dashboard": "/professor/painel",

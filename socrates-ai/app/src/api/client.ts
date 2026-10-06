@@ -20,6 +20,14 @@ function writeToken(key: string, value: string): void {
   }
 }
 
+function removeToken(key: string): void {
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    // Nada a remover se o armazenamento não está disponível.
+  }
+}
+
 export const teacherTokenFor = (code: string) => readToken(teacherKey(code));
 export const participantTokenFor = (code: string) => readToken(participantKey(code));
 
@@ -43,6 +51,18 @@ export async function apiJoinSession(code: string): Promise<{ id: string; object
   const body = (await res.json()) as { id: string; objective: string; participantToken: string };
   writeToken(participantKey(code), body.participantToken);
   return { id: body.id, objective: body.objective };
+}
+
+// Exclusão pelo professor: apaga a sessão e os dados da turma, e limpa as credenciais deste aparelho.
+export async function apiEraseSession(code: string, sessionId: string): Promise<void> {
+  const res = await fetch("/api/sessions/erase", {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${teacherTokenFor(code) ?? ""}` },
+    body: JSON.stringify({ sessionId }),
+  });
+  if (!res.ok) throw new Error(`erase ${res.status}`);
+  removeToken(teacherKey(code));
+  removeToken(participantKey(code));
 }
 
 export function postJson(path: string, body: unknown): Promise<Response> {
