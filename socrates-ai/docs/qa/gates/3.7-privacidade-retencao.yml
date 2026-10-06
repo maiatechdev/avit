@@ -1,0 +1,59 @@
+schema: 1
+story: '3.7'
+story_title: 'Privacidade e retenção'
+gate: CONCERNS
+status_reason: 'Política, prazo de 90 dias, exclusão pelo professor e registro de impacto implementados. Exclusão e limpeza não foram executadas de ponta a ponta no banco, e a análise jurídica segue pendente. Sem bloqueio para o protótipo; bloqueia uso com alunos reais.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-10-06T12:00:00-03:00'
+
+top_issues:
+  - id: PRIV-DELETE-001
+    severity: medium
+    finding: 'DELETE da exclusão e da limpeza do prazo não executados no banco; validados só por leitura do SQL.'
+    suggested_owner: dev
+  - id: PRIV-LEGAL-001
+    severity: high
+    finding: 'Análise jurídica (LGPD art. 14, ECA Digital) pendente. Bloqueia uso com dados reais de alunos.'
+    suggested_owner: po
+  - id: PRIV-PRD-001
+    severity: medium
+    finding: 'PRD afirma que nenhum dado pessoal é coletado, o que não se sustenta com o código atual.'
+    suggested_owner: po
+
+waiver: { active: false }
+
+quality_score: 80
+expires: '2026-10-20T00:00:00-03:00'
+
+evidence:
+  tests_reviewed: 58
+  risks_identified: 4
+  trace:
+    ac_covered: [1, 3, 4, 5, 6, 7]
+    ac_gaps: [2]
+
+nfr_validation:
+  security:
+    status: CONCERNS
+    notes: 'Exclusão exige token do professor. Token continua no localStorage (risco da 3.5). Análise jurídica pendente.'
+  performance:
+    status: PASS
+    notes: 'Limpeza roda na criação de sessão, com poucos DELETEs em transação. Hoje não há sessões vencidas.'
+  reliability:
+    status: CONCERNS
+    notes: 'Falha na limpeza é ignorada para não impedir a criação. Exclusão em transação, sem teste de falha parcial.'
+  maintainability:
+    status: PASS
+    notes: 'Prazo em constante única. Tabelas garantidas antes de cada operação.'
+
+recommendations:
+  immediate:
+    - action: 'Testar a exclusão em banco de desenvolvimento e no navegador (confirmação e cancelamento).'
+      refs: ['app/lib/privacy/retention.ts', 'app/src/App.tsx']
+    - action: 'Corrigir a afirmação do PRD sobre dados pessoais, conforme docs/privacidade/registro-de-impacto.md.'
+      refs: ['docs/prd/prd-mvp-avit.md']
+  future:
+    - action: 'Análise jurídica antes de uso com alunos reais.'
+      refs: ['docs/privacidade/registro-de-impacto.md']
+    - action: 'Limpeza por cron diário, para não depender de criação de sessão.'
+      refs: ['app/lib/privacy/retention.ts']
