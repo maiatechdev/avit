@@ -290,7 +290,9 @@ function StudentJoin({ onJoined, onBack }: { onJoined: (session: Session) => voi
       setError(
         error instanceof Error && error.message === "not_found"
           ? "Não encontramos uma sessão com esse código. Confira com o professor."
-          : "Não consegui entrar agora. Tente de novo.",
+          : error instanceof Error && error.message === "too_many_attempts"
+            ? "Muitas tentativas seguidas. Espere alguns minutos e tente de novo."
+            : "Não consegui entrar agora. Tente de novo.",
       );
     } finally {
       setBusy(false);

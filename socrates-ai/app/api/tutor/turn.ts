@@ -3,14 +3,9 @@ import { StubProvider } from "../../lib/tutor/provider";
 import { GeminiProvider } from "../../lib/tutor/gemini";
 import { runTurn, TutorUnavailableError, UnknownExerciseError } from "../../lib/tutor/turn";
 import { resolveParticipant } from "../../lib/participants/participants";
+import { json } from "../../lib/http/response";
 
 export const config = { runtime: "edge" };
-
-const json = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { "content-type": "application/json; charset=utf-8" },
-  });
 
 function isNonEmptyString(value: unknown, max: number): value is string {
   return typeof value === "string" && value.trim().length > 0 && value.length <= max;

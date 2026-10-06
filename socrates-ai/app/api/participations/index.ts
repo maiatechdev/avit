@@ -1,10 +1,8 @@
 import { ensureParticipationsTable, PATHS, savePath } from "../../lib/dashboard/summary";
 import { resolveParticipant } from "../../lib/participants/participants";
+import { json } from "../../lib/http/response";
 
 export const config = { runtime: "edge" };
-
-const json = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json; charset=utf-8" } });
 
 export default async function handler(request: Request): Promise<Response> {
   if (request.method !== "POST") return json({ error: "method_not_allowed" }, 405);

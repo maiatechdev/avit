@@ -1,11 +1,9 @@
 import { readDashboard, summarize } from "../../lib/dashboard/summary";
 import { bearerToken } from "../../lib/auth/tokens";
 import { isTeacherOf } from "../../lib/sessions/teacher";
+import { json } from "../../lib/http/response";
 
 export const config = { runtime: "edge" };
-
-const json = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json; charset=utf-8" } });
 
 export default async function handler(request: Request): Promise<Response> {
   if (request.method !== "GET") return json({ error: "method_not_allowed" }, 405);

@@ -47,6 +47,7 @@ export async function apiJoinSession(code: string): Promise<{ id: string; object
     body: JSON.stringify({ code, participantToken: previous ?? undefined }),
   });
   if (res.status === 404) throw new Error("not_found");
+  if (res.status === 429) throw new Error("too_many_attempts");
   if (!res.ok) throw new Error(`join ${res.status}`);
   const body = (await res.json()) as { id: string; objective: string; participantToken: string };
   writeToken(participantKey(code), body.participantToken);

@@ -1,11 +1,9 @@
 import { isTeacherOf } from "../../../lib/sessions/teacher";
 import { bearerToken } from "../../../lib/auth/tokens";
 import { eraseSession, parseSessionId } from "../../../lib/privacy/retention";
+import { json } from "../../../lib/http/response";
 
 export const config = { runtime: "edge" };
-
-const json = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json; charset=utf-8" } });
 
 // Exclusão pelo professor: só quem tem o token da sessão apaga a turma.
 export default async function handler(request: Request): Promise<Response> {
