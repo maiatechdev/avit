@@ -3,7 +3,7 @@ import { Shell } from "./components/Shell";
 import { QuestionBubble, Toggle, Confetti } from "./components/primitives";
 import { SceneInvestigar, SceneCriar, SceneResolver, SceneColaborar, SceneReflection } from "./components/scenes";
 import type { Session, Path, Message, DashboardData } from "./shared/contracts";
-import { apiCreateSession, apiEraseSession, apiJoinSession, postJson, getRequest, participantTokenFor, teacherTokenFor } from "./api/client";
+import { apiCreateSession, apiEraseSession, apiJoinSession, postJson, getRequest } from "./api/client";
 import { codeFromSearch, entryFor, needsSession, ROUTES, screenFromPath, type Screen } from "./shared/routes";
 import QRCode from "qrcode";
 import logoSocratesAi from "@/imports/logoSocratesAi.svg";
@@ -354,7 +354,7 @@ const CHECKIN_OPTIONS = {
   ],
 } as const;
 
-function StudentCheckin({ sessionId, code, onBack, onDone }: { sessionId: string; code: string; onBack: () => void; onDone: (mission: string) => void }) {
+function StudentCheckin({ sessionId, onBack, onDone }: { sessionId: string; onBack: () => void; onDone: (mission: string) => void }) {
   const [answers, setAnswers] = useState<{ difficulty?: string; time?: string; feeling?: string }>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -364,7 +364,7 @@ function StudentCheckin({ sessionId, code, onBack, onDone }: { sessionId: string
     setBusy(true);
     setError(null);
     try {
-      const res = await postJson("/api/checkins", { sessionId, participantToken: participantTokenFor(code), ...answers });
+      const res = await postJson("/api/checkins", { sessionId, ...answers });
       if (!res.ok) throw new Error(String(res.status));
       const data = (await res.json()) as { mission: string };
       onDone(data.mission);
@@ -622,7 +622,7 @@ function StudentFocus({ onBack, onContinue }: { onBack: () => void; onContinue: 
 const EXERCISE_ID = "f1-avaliacao-1";
 const DEFAULT_MISSION = "Vamos pensar juntos.";
 
-function StudentChat({ sessionId, code, mission, path, focusActive: initFocus, focusSecs: initSecs, onBack, onFinish }: { sessionId: string; code: string; mission: string | null; path: Path; focusActive: boolean; focusSecs: number; onBack: () => void; onFinish: () => void }) {
+function StudentChat({ sessionId, mission, path, focusActive: initFocus, focusSecs: initSecs, onBack, onFinish }: { sessionId: string; mission: string | null; path: Path; focusActive: boolean; focusSecs: number; onBack: () => void; onFinish: () => void }) {
   const [messages, setMessages] = useState<Message[]>([
     { role: "ai", text: `Oi! ${mission ?? DEFAULT_MISSION} Se f(x) = 2x + 3, quanto vale f(4)? Me conta como você pensaria para resolver.` },
   ]);
@@ -662,7 +662,7 @@ function StudentChat({ sessionId, code, mission, path, focusActive: initFocus, f
     setInput("");
     setSending(true);
     try {
-      const res = await postJson("/api/tutor/turn", { sessionId, participantToken: participantTokenFor(code), exerciseId, message: text });
+      const res = await postJson("/api/tutor/turn", { sessionId, exerciseId, message: text });
       if (!res.ok) throw new Error(`tutor ${res.status}`);
       const data = (await res.json()) as { action: string; resposta_ao_aluno: string; exerciseId: string };
       setExerciseId(data.exerciseId);
@@ -927,7 +927,7 @@ function TeacherDashboard({ session, onBack, onErased }: { session: Session | nu
     setErasing(true);
     setEraseError(false);
     try {
-      await apiEraseSession(session.code, session.id);
+      await apiEraseSession(session.id);
       onErased();
     } catch {
       setEraseError(true);
@@ -938,8 +938,7 @@ function TeacherDashboard({ session, onBack, onErased }: { session: Session | nu
   useEffect(() => {
     if (!session) return;
     let cancelled = false;
-    const token = teacherTokenFor(session.code) ?? "";
-    getRequest(`/api/dashboard?sessionId=${encodeURIComponent(session.id)}`, { authorization: `Bearer ${token}` })
+    getRequest(`/api/dashboard?sessionId=${encodeURIComponent(session.id)}`)
       .then((res) => {
         if (res.status === 401) throw new Error("locked");
         if (!res.ok) throw new Error(String(res.status));
@@ -1173,7 +1172,7 @@ export default function App() {
   const handleChoosePath = (p: Path) => {
     setPath(p);
     if (session) {
-      postJson("/api/participations", { sessionId: session.id, participantToken: participantTokenFor(session.code), path: p }).catch(() => undefined);
+      postJson("/api/participations", { sessionId: session.id, path: p }).catch(() => undefined);
     }
     go("student-focus");
   };
@@ -1187,12 +1186,12 @@ export default function App() {
       {screen === "intro"              && <Intro onEnter={() => go("teacher-activate")} onStudent={() => go("student-join")} onPrivacy={() => go("privacy")} />}
       {screen === "privacy"            && <PrivacyPage onBack={() => go("intro")} />}
       {screen === "student-join"       && <StudentJoin onBack={() => go("intro")} onJoined={(s) => { setSession(s); go("student-checkin"); }} />}
-      {screen === "student-checkin"    && <StudentCheckin sessionId={session?.id ?? ""} code={session?.code ?? ""} onBack={() => go("student-join")} onDone={(m) => { setMission(m); go("student-paths"); }} />}
+      {screen === "student-checkin"    && <StudentCheckin sessionId={session?.id ?? ""} onBack={() => go("student-join")} onDone={(m) => { setMission(m); go("student-paths"); }} />}
       {screen === "teacher-activate"   && <TeacherActivate onActivate={(s) => { setSession(s); go("teacher-activated"); }} onBack={() => go("intro")} />}
       {screen === "teacher-activated"  && <TeacherActivated session={session} onBack={() => go("teacher-activate")} onViewDashboard={() => go("teacher-dashboard")} />}
       {screen === "student-paths"      && <StudentPaths objective={session?.objective ?? "Objetivo ainda não definido"} onBack={() => go("student-checkin")} onChoose={handleChoosePath} />}
       {screen === "student-focus"      && <StudentFocus onBack={() => go("student-paths")} onContinue={handleFocusContinue} />}
-      {screen === "student-chat"       && <StudentChat sessionId={session?.id ?? "sem-sessao"} code={session?.code ?? ""} mission={mission} path={path} focusActive={focusActive} focusSecs={focusSecs} onBack={() => go("student-focus")} onFinish={() => go("student-reflection")} />}
+      {screen === "student-chat"       && <StudentChat sessionId={session?.id ?? "sem-sessao"} mission={mission} path={path} focusActive={focusActive} focusSecs={focusSecs} onBack={() => go("student-focus")} onFinish={() => go("student-reflection")} />}
       {/* Ao terminar, o aluno volta à entrada: o painel é só do professor. */}
       {screen === "student-reflection" && <StudentReflection onSend={() => { saveState(null); setSession(null); go("intro"); }} />}
       {screen === "teacher-dashboard"  && <TeacherDashboard session={session} onBack={() => go("teacher-activated")} onErased={() => { saveState(null); setSession(null); go("intro"); }} />}

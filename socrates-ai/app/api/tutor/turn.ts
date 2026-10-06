@@ -3,7 +3,8 @@ import { StubProvider } from "../../lib/tutor/provider";
 import { GeminiProvider } from "../../lib/tutor/gemini";
 import { runTurn, TutorUnavailableError, UnknownExerciseError } from "../../lib/tutor/turn";
 import { resolveParticipant } from "../../lib/participants/participants";
-import { json } from "../../lib/http/response";
+import { participantCookieName, readCookie } from "../../lib/auth/cookies";
+import { errorResponse, json } from "../../lib/http/response";
 
 export const config = { runtime: "edge" };
 
@@ -17,31 +18,31 @@ function chooseProvider() {
 }
 
 export default async function handler(request: Request): Promise<Response> {
-  if (request.method !== "POST") return json({ error: "method_not_allowed" }, 405);
+  if (request.method !== "POST") return errorResponse("method_not_allowed", 405);
 
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return json({ error: "invalid_json" }, 400);
+    return errorResponse("invalid_json", 400);
   }
 
-  const { sessionId, participantToken, exerciseId, message } = (body ?? {}) as Record<string, unknown>;
+  const { sessionId, exerciseId, message } = (body ?? {}) as Record<string, unknown>;
   if (
     !isNonEmptyString(sessionId, 64) ||
-    !isNonEmptyString(participantToken, 128) ||
     !isNonEmptyString(exerciseId, 64) ||
     !isNonEmptyString(message, 1000)
   ) {
-    return json({ error: "invalid_input" }, 400);
+    return errorResponse("invalid_input", 400);
   }
 
   const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) return json({ error: "database_not_configured" }, 503);
+  if (!databaseUrl) return errorResponse("database_not_configured", 503);
 
   try {
-    const participantId = await resolveParticipant(databaseUrl, sessionId, participantToken);
-    if (!participantId) return json({ error: "invalid_participant" }, 401);
+    const token = readCookie(request, participantCookieName(sessionId));
+    const participantId = token ? await resolveParticipant(databaseUrl, sessionId, token) : null;
+    if (!participantId) return errorResponse("invalid_participant", 401, "Entre de novo na sessão.");
 
     const result = await runTurn(
       { sessionId, participantId, exerciseId, message },
@@ -49,10 +50,10 @@ export default async function handler(request: Request): Promise<Response> {
     );
     return json(result);
   } catch (error) {
-    if (error instanceof UnknownExerciseError) return json({ error: "unknown_exercise" }, 404);
+    if (error instanceof UnknownExerciseError) return errorResponse("unknown_exercise", 404);
     if (error instanceof TutorUnavailableError) {
-      return json({ error: "tutor_unavailable", message: "O tutor está indisponível. Tente de novo." }, 503);
+      return errorResponse("tutor_unavailable", 503, "O tutor está indisponível. Tente de novo.");
     }
-    return json({ error: "internal_error" }, 500);
+    return errorResponse("internal_error", 500);
   }
 }
