@@ -4,19 +4,18 @@ import { QuestionBubble, Toggle, Confetti } from "./components/primitives";
 import { SceneInvestigar, SceneCriar, SceneResolver, SceneColaborar, SceneReflection } from "./components/scenes";
 import type { Session, Path, Message, DashboardData } from "./shared/contracts";
 import { apiCreateSession, apiJoinSession, postJson, getRequest, participantTokenFor, teacherTokenFor } from "./api/client";
+import { codeFromSearch, entryFor, needsSession, ROUTES, screenFromPath, type Screen } from "./shared/routes";
+import QRCode from "qrcode";
 import logoSocratesAi from "@/imports/logoSocratesAi.svg";
 
-type Screen =
-  | "intro"
-  | "student-join"
-  | "student-checkin"
-  | "teacher-activate"
-  | "teacher-activated"
-  | "student-paths"
-  | "student-focus"
-  | "student-chat"
-  | "student-reflection"
-  | "teacher-dashboard";
+// Botão de voltar padrão de todas as telas: usa a rota anterior do app, não o histórico do aparelho.
+function BackLink({ onClick, label = "← Voltar" }: { onClick: () => void; label?: string }) {
+  return (
+    <button onClick={onClick} className="self-start text-sm font-bold mb-6 py-1" style={{ color: "var(--muted-foreground)" }}>
+      {label}
+    </button>
+  );
+}
 
 function fmt(s: number) {
   return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
@@ -94,7 +93,7 @@ function Intro({ onEnter, onStudent }: { onEnter: () => void; onStudent: () => v
 
 // ── Screen 1: Teacher Activate ────────────────────────────────────────────────
 
-function TeacherActivate({ onActivate }: { onActivate: (session: Session) => void }) {
+function TeacherActivate({ onActivate, onBack }: { onActivate: (session: Session) => void; onBack: () => void }) {
   const [objective, setObjective] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
@@ -112,6 +111,7 @@ function TeacherActivate({ onActivate }: { onActivate: (session: Session) => voi
   return (
     <Shell wide>
       <div className="screen-enter flex flex-col min-h-[100svh] px-6 pt-6 pb-8 lg:mx-auto lg:max-w-2xl lg:w-full lg:py-12">
+        <BackLink onClick={onBack} />
         <div className="flex items-center gap-2 self-start mb-8">
           <span className="w-2 h-2 rounded-full block" style={{ background: "var(--ai)" }} />
           <span className="text-xs font-medium" style={{ color: "var(--ai)" }}>
@@ -192,10 +192,29 @@ function TeacherActivate({ onActivate }: { onActivate: (session: Session) => voi
 
 // ── Screen 2: Teacher Activated (QR) ─────────────────────────────────────────
 
-function TeacherActivated({ session, onViewDashboard }: { session: Session | null; onViewDashboard: () => void }) {
+// QR real: aponta para a entrada do aluno já com o código preenchido.
+function SessionQr({ url }: { url: string }) {
+  const [src, setSrc] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    QRCode.toDataURL(url, { margin: 1, width: 192, color: { dark: "#142463", light: "#FFFFFF" } })
+      .then((data) => { if (!cancelled) setSrc(data); })
+      .catch(() => { if (!cancelled) setSrc(null); });
+    return () => { cancelled = true; };
+  }, [url]);
+  return src ? (
+    <img src={src} alt="QR code para entrar na sessão" width={192} height={192} className="rounded-2xl" />
+  ) : (
+    <div style={{ width: 192, height: 192 }} className="rounded-2xl" aria-hidden="true" />
+  );
+}
+
+function TeacherActivated({ session, onBack, onViewDashboard }: { session: Session | null; onBack: () => void; onViewDashboard: () => void }) {
+  const joinUrl = session ? `${window.location.origin}${ROUTES["student-join"]}?codigo=${encodeURIComponent(session.code)}` : "";
   return (
     <Shell wide>
-      <div className="screen-enter flex flex-col min-h-[100svh] px-6 pt-6 pb-24 lg:mx-auto lg:max-w-lg lg:w-full lg:py-12">
+      <div className="screen-enter flex flex-col min-h-[100svh] px-6 pt-6 pb-8 lg:mx-auto lg:max-w-lg lg:w-full lg:py-12">
+        <BackLink onClick={onBack} />
         <div className="flex items-center gap-2 mb-8">
           <span className="w-2 h-2 rounded-full block" style={{ background: "#2FB67C" }} />
           <span className="text-xs font-medium" style={{ color: "var(--muted-foreground)" }}>Sessão ativa — Lei 15.100/2025</span>
@@ -216,13 +235,7 @@ function TeacherActivated({ session, onViewDashboard }: { session: Session | nul
           </div>
 
           <div className="rounded-3xl p-5 flex flex-col items-center gap-4" style={{ background: "var(--card)", border: "1.5px solid var(--border)" }}>
-            <div style={{ width: 192, height: 192, borderRadius: 16, display: "grid", gridTemplateColumns: "repeat(10, 1fr)", gridTemplateRows: "repeat(10, 1fr)", gap: 2, padding: 8, background: "#FAFAFA" }}>
-              {Array.from({ length: 100 }).map((_, i) => {
-                const corners = [0,1,2,3,10,11,12,20,21,22,7,8,9,17,18,19,27,28,29,70,71,72,80,81,82,90,91,92,77,78,79,87,88,89,97,98,99];
-                const fill = corners.includes(i) || (i * 7919) % 100 > 45;
-                return <div key={i} className="rounded-sm" style={{ background: fill ? "var(--foreground)" : "transparent" }} />;
-              })}
-            </div>
+            {session && <SessionQr url={joinUrl} />}
             <div className="px-6 py-3 rounded-2xl text-center" style={{ background: "var(--muted)" }}>
               <p className="text-xs mb-1" style={{ color: "var(--muted-foreground)" }}>Código da sessão</p>
               <p className="text-3xl font-bold tracking-[0.15em]" style={{ color: "var(--primary)" }}>{session?.code ?? "SOC-----"}</p>
@@ -239,7 +252,7 @@ function TeacherActivated({ session, onViewDashboard }: { session: Session | nul
           </div>
         </div>
 
-        <button onClick={onViewDashboard} className="btn-bounce w-full py-4 text-base font-bold rounded-2xl mt-6"
+        <button onClick={onViewDashboard} className="btn-bounce w-full py-4 text-base font-bold rounded-2xl mt-6 lg:max-w-md lg:mx-auto"
           style={{ background: "var(--muted)", color: "var(--foreground)" }}>
           Ver painel da turma
         </button>
@@ -258,7 +271,7 @@ const PATHS = [
 ];
 
 function StudentJoin({ onJoined, onBack }: { onJoined: (session: Session) => void; onBack: () => void }) {
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState(() => codeFromSearch(window.location.search));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const ready = code.trim().length > 0 && !busy;
@@ -336,7 +349,7 @@ const CHECKIN_OPTIONS = {
   ],
 } as const;
 
-function StudentCheckin({ sessionId, code, onDone }: { sessionId: string; code: string; onDone: (mission: string) => void }) {
+function StudentCheckin({ sessionId, code, onBack, onDone }: { sessionId: string; code: string; onBack: () => void; onDone: (mission: string) => void }) {
   const [answers, setAnswers] = useState<{ difficulty?: string; time?: string; feeling?: string }>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -387,7 +400,8 @@ function StudentCheckin({ sessionId, code, onDone }: { sessionId: string; code: 
 
   return (
     <Shell>
-      <div className="screen-enter flex flex-col min-h-[100svh] px-5 pt-10 pb-24 lg:mx-auto lg:max-w-2xl lg:w-full">
+      <div className="screen-enter flex flex-col min-h-[100svh] px-5 pt-10 pb-8 lg:mx-auto lg:max-w-2xl lg:w-full">
+        <BackLink onClick={onBack} />
         <h1 className="text-2xl font-extrabold mb-1" style={{ color: "var(--foreground)" }}>Antes de começar</h1>
         <p className="text-sm mb-6" style={{ color: "var(--muted-foreground)" }}>
           Três perguntas rápidas para a sua missão ficar do seu tamanho.
@@ -411,12 +425,13 @@ function StudentCheckin({ sessionId, code, onDone }: { sessionId: string; code: 
   );
 }
 
-function StudentPaths({ objective, onChoose }: { objective: string; onChoose: (path: Path) => void }) {
+function StudentPaths({ objective, onBack, onChoose }: { objective: string; onBack: () => void; onChoose: (path: Path) => void }) {
   const [selected, setSelected] = useState<Path>(null);
 
   return (
     <Shell wide>
-      <div className="screen-enter flex flex-col min-h-[100svh] px-5 pt-6 pb-24 lg:px-12 lg:pt-12 lg:mx-auto lg:max-w-6xl lg:w-full">
+      <div className="screen-enter flex flex-col min-h-[100svh] px-5 pt-6 pb-8 lg:px-12 lg:pt-12 lg:mx-auto lg:max-w-6xl lg:w-full">
+        <BackLink onClick={onBack} />
         {/* Objective banner */}
         <div className="rounded-2xl px-4 py-3 mb-5 flex items-start gap-3" style={{ background: "var(--muted)" }}>
           <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 mt-0.5 shrink-0">
@@ -519,14 +534,15 @@ const DURATIONS = [
   { label: "30 min", secs: 1800 },
 ];
 
-function StudentFocus({ onContinue }: { onContinue: (active: boolean, secs: number) => void }) {
+function StudentFocus({ onBack, onContinue }: { onBack: () => void; onContinue: (active: boolean, secs: number) => void }) {
   const [enabled, setEnabled] = useState(false);
   const [selectedSecs, setSelectedSecs] = useState(1200);
 
   return (
     <Shell wide>
-      <div className="screen-enter flex flex-col min-h-[100svh] px-5 pt-10 pb-24 lg:px-16 lg:pt-20 lg:mx-auto lg:max-w-6xl lg:w-full lg:grid lg:grid-cols-2 lg:gap-20 lg:items-center">
+      <div className="screen-enter flex flex-col min-h-[100svh] px-5 pt-10 pb-8 lg:px-16 lg:pt-20 lg:mx-auto lg:max-w-6xl lg:w-full lg:grid lg:grid-cols-2 lg:gap-20 lg:items-center">
         <div className="lg:flex lg:flex-col">
+        <BackLink onClick={onBack} />
         <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6"
           style={{ background: enabled ? "var(--ai-muted)" : "var(--muted)", transition: "background 0.3s" }}>
           <svg viewBox="0 0 24 24" fill="none" stroke={enabled ? "var(--ai)" : "var(--muted-foreground)"}
@@ -601,7 +617,7 @@ function StudentFocus({ onContinue }: { onContinue: (active: boolean, secs: numb
 const EXERCISE_ID = "f1-avaliacao-1";
 const DEFAULT_MISSION = "Vamos pensar juntos.";
 
-function StudentChat({ sessionId, code, mission, path, focusActive: initFocus, focusSecs: initSecs, onFinish }: { sessionId: string; code: string; mission: string | null; path: Path; focusActive: boolean; focusSecs: number; onFinish: () => void }) {
+function StudentChat({ sessionId, code, mission, path, focusActive: initFocus, focusSecs: initSecs, onBack, onFinish }: { sessionId: string; code: string; mission: string | null; path: Path; focusActive: boolean; focusSecs: number; onBack: () => void; onFinish: () => void }) {
   const [messages, setMessages] = useState<Message[]>([
     { role: "ai", text: `Oi! ${mission ?? DEFAULT_MISSION} Se f(x) = 2x + 3, quanto vale f(4)? Me conta como você pensaria para resolver.` },
   ]);
@@ -662,7 +678,8 @@ function StudentChat({ sessionId, code, mission, path, focusActive: initFocus, f
       <div className="screen-enter flex flex-col lg:flex-row h-[100svh]">
         <div className="flex flex-col flex-1 min-w-0 min-h-0 lg:mx-auto lg:max-w-3xl lg:w-full">
         {/* Header */}
-        <div className="px-5 pt-5 pb-4 flex flex-col gap-3" style={{ background: "var(--card)", borderBottom: "1px solid var(--border)" }}>
+        <div className="px-5 pt-4 pb-4 flex flex-col gap-3" style={{ background: "var(--card)", borderBottom: "1px solid var(--border)" }}>
+          <button onClick={onBack} className="self-start text-sm font-bold py-1" style={{ color: "var(--muted-foreground)" }}>← Voltar</button>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold mb-0.5" style={{ color: "var(--muted-foreground)" }}>{pathLabel} — mudanças climáticas</p>
@@ -720,7 +737,7 @@ function StudentChat({ sessionId, code, mission, path, focusActive: initFocus, f
         </div>
 
         {/* Input bar */}
-        <div className="px-4 pt-3 pb-24 lg:pb-6 flex flex-col gap-2" style={{ background: "var(--card)", borderTop: "1px solid var(--border)" }}>
+        <div className="px-4 pt-3 pb-4 flex flex-col gap-2" style={{ background: "var(--card)", borderTop: "1px solid var(--border)" }}>
           {showFinish && (
             <button onClick={onFinish} className="btn-bounce w-full py-3 text-sm font-bold rounded-xl"
               style={{ background: "var(--secondary)", color: "var(--secondary-foreground)", border: "2px solid var(--border)" }}>
@@ -911,7 +928,8 @@ function TeacherDashboard({ session, onBack }: { session: Session | null; onBack
 
   return (
     <Shell wide>
-      <div className="screen-enter flex flex-col min-h-[100svh] px-5 lg:px-10 pt-6 pb-24 overflow-y-auto scrollbar-hide">
+      <div className="screen-enter flex flex-col min-h-[100svh] px-5 lg:px-10 pt-6 pb-8 overflow-y-auto scrollbar-hide lg:max-w-6xl lg:mx-auto lg:w-full">
+        <BackLink onClick={onBack} />
         <div className="flex items-center justify-between mb-6">
           <div>
             <p className="text-xs font-semibold mb-0.5" style={{ color: "var(--muted-foreground)" }}>PAINEL DO PROFESSOR</p>
@@ -1017,28 +1035,65 @@ function TeacherDashboard({ session, onBack }: { session: Session | null; onBack
   );
 }
 
-// ── Nav bar ───────────────────────────────────────────────────────────────────
+// ── Estado salvo no navegador: permite recuperar a tela ao recarregar a página ──
 
-const NAV_ITEMS: { screen: Screen; label: string }[] = [
-  { screen: "teacher-activate", label: "Ativar" },
-  { screen: "student-paths",    label: "Caminhos" },
-  { screen: "student-focus",    label: "Foco" },
-  { screen: "student-chat",     label: "IA Chat" },
-  { screen: "student-reflection", label: "Reflexão" },
-  { screen: "teacher-dashboard", label: "Painel" },
-];
+type SavedState = { session: Session; mission: string | null; path: Path };
+const STATE_KEY = "socrates-state";
+
+function loadState(): SavedState | null {
+  try {
+    const raw = localStorage.getItem(STATE_KEY);
+    return raw ? (JSON.parse(raw) as SavedState) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveState(state: SavedState | null): void {
+  try {
+    if (state) localStorage.setItem(STATE_KEY, JSON.stringify(state));
+    else localStorage.removeItem(STATE_KEY);
+  } catch {
+    // Sem armazenamento, a página continua funcionando; só não recupera ao recarregar.
+  }
+}
 
 // ── App Root ──────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>("intro");
-  const [path, setPath] = useState<Path>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [mission, setMission] = useState<string | null>(null);
+  const [initial] = useState(() => loadState());
+  const [requested, setScreen] = useState<Screen>(() => screenFromPath(window.location.pathname));
+  const [path, setPath] = useState<Path>(initial?.path ?? null);
+  const [session, setSession] = useState<Session | null>(initial?.session ?? null);
+  const [mission, setMission] = useState<string | null>(initial?.mission ?? null);
   const [focusActive, setFocusActive] = useState(false);
   const [focusSecs, setFocusSecs] = useState(0);
 
-  const go = (s: Screen) => setScreen(s);
+  useEffect(() => {
+    saveState(session ? { session, mission, path } : null);
+  }, [session, mission, path]);
+
+  // Voltar e avançar do navegador trocam a tela conforme a URL.
+  useEffect(() => {
+    const onPop = () => setScreen(screenFromPath(window.location.pathname));
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  const go = useCallback((s: Screen, replace = false) => {
+    const url = ROUTES[s];
+    if (window.location.pathname !== url) {
+      if (replace) window.history.replaceState(null, "", url);
+      else window.history.pushState(null, "", url);
+    }
+    setScreen(s);
+  }, []);
+
+  // Sem sessão carregada, a tela mostrada é a entrada da área, e a URL acompanha.
+  const screen = needsSession(requested) && !session ? entryFor(requested) : requested;
+  useEffect(() => {
+    if (screen !== requested) window.history.replaceState(null, "", ROUTES[screen]);
+  }, [screen, requested]);
 
   const handleChoosePath = (p: Path) => {
     setPath(p);
@@ -1052,41 +1107,19 @@ export default function App() {
     setFocusActive(active); setFocusSecs(secs); go("student-chat");
   };
 
-  const isActive = (s: Screen) =>
-    screen === s || (screen === "teacher-activated" && s === "teacher-activate");
-
   return (
     <div className="relative">
       {screen === "intro"              && <Intro onEnter={() => go("teacher-activate")} onStudent={() => go("student-join")} />}
       {screen === "student-join"       && <StudentJoin onBack={() => go("intro")} onJoined={(s) => { setSession(s); go("student-checkin"); }} />}
-      {screen === "student-checkin"    && <StudentCheckin sessionId={session?.id ?? ""} code={session?.code ?? ""} onDone={(m) => { setMission(m); go("student-paths"); }} />}
-      {screen === "teacher-activate"   && <TeacherActivate onActivate={(s) => { setSession(s); go("teacher-activated"); }} />}
-      {screen === "teacher-activated"  && <TeacherActivated session={session} onViewDashboard={() => go("teacher-dashboard")} />}
-      {screen === "student-paths"      && <StudentPaths objective={session?.objective ?? "Objetivo ainda não definido"} onChoose={handleChoosePath} />}
-      {screen === "student-focus"      && <StudentFocus onContinue={handleFocusContinue} />}
-      {screen === "student-chat"       && <StudentChat sessionId={session?.id ?? "sem-sessao"} code={session?.code ?? ""} mission={mission} path={path} focusActive={focusActive} focusSecs={focusSecs} onFinish={() => go("student-reflection")} />}
-      {screen === "student-reflection" && <StudentReflection onSend={() => go("teacher-dashboard")} />}
-      {screen === "teacher-dashboard"  && <TeacherDashboard session={session} onBack={() => go("teacher-activate")} />}
-
-      {/* Navigation tabs — hidden na tela de splash */}
-      {screen !== "intro" && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center" style={{ pointerEvents: "none" }}>
-          <div className="flex items-center gap-0.5 px-2 py-2 mb-4 rounded-2xl"
-            style={{ background: "rgba(42,31,16,0.92)", backdropFilter: "blur(12px)", pointerEvents: "auto", boxShadow: "0 4px 24px rgba(0,0,0,0.18)" }}>
-            {NAV_ITEMS.map((item) => (
-              <button key={item.screen} onClick={() => go(item.screen)}
-                className="px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-colors"
-                style={{
-                  background: isActive(item.screen) ? "var(--primary)" : "transparent",
-                  color: isActive(item.screen) ? "white" : "rgba(255,255,255,0.5)",
-                  fontFamily: "Nunito, sans-serif",
-                }}>
-                {item.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      {screen === "student-checkin"    && <StudentCheckin sessionId={session?.id ?? ""} code={session?.code ?? ""} onBack={() => go("student-join")} onDone={(m) => { setMission(m); go("student-paths"); }} />}
+      {screen === "teacher-activate"   && <TeacherActivate onActivate={(s) => { setSession(s); go("teacher-activated"); }} onBack={() => go("intro")} />}
+      {screen === "teacher-activated"  && <TeacherActivated session={session} onBack={() => go("teacher-activate")} onViewDashboard={() => go("teacher-dashboard")} />}
+      {screen === "student-paths"      && <StudentPaths objective={session?.objective ?? "Objetivo ainda não definido"} onBack={() => go("student-checkin")} onChoose={handleChoosePath} />}
+      {screen === "student-focus"      && <StudentFocus onBack={() => go("student-paths")} onContinue={handleFocusContinue} />}
+      {screen === "student-chat"       && <StudentChat sessionId={session?.id ?? "sem-sessao"} code={session?.code ?? ""} mission={mission} path={path} focusActive={focusActive} focusSecs={focusSecs} onBack={() => go("student-focus")} onFinish={() => go("student-reflection")} />}
+      {/* Ao terminar, o aluno volta à entrada: o painel é só do professor. */}
+      {screen === "student-reflection" && <StudentReflection onSend={() => { saveState(null); setSession(null); go("intro"); }} />}
+      {screen === "teacher-dashboard"  && <TeacherDashboard session={session} onBack={() => go("teacher-activated")} />}
     </div>
   );
 }
