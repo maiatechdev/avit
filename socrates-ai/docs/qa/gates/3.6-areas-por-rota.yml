@@ -1,0 +1,57 @@
+schema: 1
+story: '3.6'
+story_title: 'Áreas por rota (professor e aluno)'
+gate: CONCERNS
+status_reason: 'Rotas, recuperação ao recarregar, QR real e remoção da barra implementados e cobertos por teste unitário de rotas. A tela não foi verificada no navegador, e o caminho de URL direta depende do fallback da Vercel ainda não confirmado. Sem bloqueio.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-10-06T10:00:00-03:00'
+
+top_issues:
+  - id: UI-VERIFY-036
+    severity: medium
+    finding: 'Telas não verificadas no navegador: QR escaneável, voltar e avançar, recarregar no meio do fluxo, desktop do painel e do chat.'
+    suggested_owner: dev
+  - id: ROUTE-DEPLOY-036
+    severity: low
+    finding: 'Fallback de SPA (vercel.json) não confirmado em produção: URL direta de /professor/painel precisa abrir.'
+    suggested_owner: dev
+  - id: STATE-036
+    severity: low
+    finding: 'Sessão e missão no localStorage são compartilhadas entre abas do mesmo aparelho. Histórico do chat não é recuperado ao recarregar.'
+    suggested_owner: po
+
+waiver: { active: false }
+
+quality_score: 90
+expires: '2026-10-20T00:00:00-03:00'
+
+evidence:
+  tests_reviewed: 54
+  risks_identified: 3
+  trace:
+    ac_covered: [1, 4, 5, 6, 7, 8, 9, 10, 11]
+    ac_gaps: [2, 3]
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'Sem mudança na API. O token do aluno e do professor continuam no localStorage, risco já registrado na Story 3.5.'
+  performance:
+    status: CONCERNS
+    notes: 'Dependência qrcode adiciona cerca de 9 KB comprimidos ao bundle (80,0 para 89,1 kB no build).'
+  reliability:
+    status: CONCERNS
+    notes: 'Falhas de localStorage são tratadas com try/catch. Lint acusou efeito com setState; corrigido com tela derivada.'
+  maintainability:
+    status: PASS
+    notes: 'Mapa de rotas em módulo puro, testado. BackLink reutilizado nas telas.'
+
+recommendations:
+  immediate:
+    - action: 'Testar no navegador: URLs diretas, voltar e avançar, QR escaneável, recarregar no fluxo do aluno e desktop.'
+      refs: ['app/src/App.tsx', 'app/src/shared/routes.ts']
+    - action: 'Confirmar fallback de SPA da Vercel em produção.'
+      refs: ['app/vercel.json']
+  future:
+    - action: 'Guardar histórico do chat no servidor para recuperar a conversa ao recarregar.'
+      refs: ['app/lib/tutor/attempts.ts']
