@@ -47,5 +47,5 @@ O PRD (`docs/prd/prd-mvp-avit.md`) afirmava que nenhum dado pessoal é coletado.
 ## 6. Próximos passos
 
 1. Análise jurídica por profissional habilitado, antes de qualquer uso com alunos reais.
-3. Testar o fluxo com cookies no navegador, em localhost e em produção (Story 3.9).
-4. Registrar a verificação dos termos do Gemini junto a este documento.
+2. Testar o fluxo com cookies no navegador, em localhost e em produção (Story 3.9).
+3. Registrar a verificação dos termos do Gemini junto a este documento.
