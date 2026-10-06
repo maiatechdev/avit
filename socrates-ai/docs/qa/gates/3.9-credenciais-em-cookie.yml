@@ -1,0 +1,55 @@
+schema: 1
+story: '3.9'
+story_title: 'Credenciais em cookie HttpOnly'
+gate: CONCERNS
+status_reason: 'Tokens de professor e de aluno migrados para cookies HttpOnly com SameSite=Strict, e o cliente deixou de guardar credenciais. Não testado no navegador, incluindo o atributo Secure em localhost. Sem bloqueio.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-10-06T16:00:00-03:00'
+
+top_issues:
+  - id: COOKIE-E2E-001
+    severity: medium
+    finding: 'Fluxo com cookie real não testado no navegador; atributo Secure em localhost não confirmado.'
+    suggested_owner: dev
+  - id: COOKIE-RENEW-001
+    severity: low
+    finding: 'Sem renovação: cookie válido por 30 dias.'
+    suggested_owner: po
+  - id: COOKIE-LEGACY-001
+    severity: low
+    finding: 'Chaves antigas no localStorage permanecem nos navegadores que usaram a versão anterior.'
+    suggested_owner: dev
+
+waiver: { active: false }
+
+quality_score: 90
+expires: '2026-10-20T00:00:00-03:00'
+
+evidence:
+  tests_reviewed: 63
+  risks_identified: 4
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'Token inacessível a scripts (HttpOnly). SameSite=Strict contra CSRF. Secure exige HTTPS fora de localhost.'
+  performance:
+    status: PASS
+    notes: 'Nenhuma leitura extra no banco além das já existentes.'
+  reliability:
+    status: CONCERNS
+    notes: 'Se o navegador bloquear cookies de terceiros ou de localhost sem HTTPS, o aluno não consegue entrar. Mensagem de erro existe no check-in e no chat.'
+  maintainability:
+    status: PASS
+    notes: 'Nomes de cookie centralizados em lib/auth/cookies.ts.'
+
+recommendations:
+  immediate:
+    - action: 'Testar no navegador o fluxo completo com cookies, em vercel dev e em produção.'
+      refs: ['app/lib/auth/cookies.ts']
+  future:
+    - action: 'Limpar chaves antigas do localStorage.'
+      refs: ['app/src/api/client.ts']

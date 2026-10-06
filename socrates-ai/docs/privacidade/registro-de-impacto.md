@@ -34,7 +34,7 @@ Apoiar o professor com um painel de turma e o aluno com um tutor socrático dura
 
 | Risco | Probabilidade | Impacto | Situação |
 |---|---|---|---|
-| Token guardado no `localStorage` pode ser lido por script injetado | Baixa | Alto | Aceito no protótipo; revisar antes de uso real |
+| Token guardado em cookie HttpOnly (Story 3.9): não legível por script da página | Baixa | Alto | Mitigado; falta teste no navegador |
 | Mensagens de alunos enviadas ao Gemini | Média | Alto | Termos da chave verificados pelo responsável; registrar a verificação |
 | Limpeza só roda ao criar sessão | Média | Médio | Dados antigos podem ficar até a próxima criação |
 | Sessões anteriores à Story 3.5 não podem ser apagadas pelo professor | Baixa | Médio | Limpeza automática do prazo cobre |
@@ -47,5 +47,5 @@ O PRD (`docs/prd/prd-mvp-avit.md`) afirmava que nenhum dado pessoal é coletado.
 ## 6. Próximos passos
 
 1. Análise jurídica por profissional habilitado, antes de qualquer uso com alunos reais.
-3. Decidir sobre o token do professor fora do `localStorage`.
+3. Testar o fluxo com cookies no navegador, em localhost e em produção (Story 3.9).
 4. Registrar a verificação dos termos do Gemini junto a este documento.
