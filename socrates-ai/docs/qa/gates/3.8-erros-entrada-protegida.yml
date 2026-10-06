@@ -1,0 +1,59 @@
+schema: 1
+story: '3.8'
+story_title: 'Erros padronizados e entrada protegida'
+gate: CONCERNS
+status_reason: 'Helper único de resposta e limite de tentativas por IP implementados e cobertos por teste unitário. O SQL do limite não foi executado no banco, e o limite não foi testado de ponta a ponta. Sem bloqueio.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-10-06T14:00:00-03:00'
+
+top_issues:
+  - id: RATE-DB-001
+    severity: medium
+    finding: 'SQL do limite de tentativas não executado no banco; lógica de janela sem teste automatizado.'
+    suggested_owner: dev
+  - id: RATE-NAT-001
+    severity: low
+    finding: 'Limite por IP pode bloquear alunos atrás do mesmo IP de saída da escola.'
+    suggested_owner: po
+  - id: ERR-CLIENT-001
+    severity: low
+    finding: 'Cliente ainda decide por status HTTP em várias telas; o código no corpo não é lido em todo lugar.'
+    suggested_owner: dev
+
+waiver: { active: false }
+
+quality_score: 90
+expires: '2026-10-20T00:00:00-03:00'
+
+evidence:
+  tests_reviewed: 63
+  risks_identified: 4
+  trace:
+    ac_covered: [1, 2, 5, 6, 7]
+    ac_gaps: [3, 4]
+
+nfr_validation:
+  security:
+    status: CONCERNS
+    notes: 'Limite de tentativas na entrada reduz a varredura de códigos. x-forwarded-for é confiável só pela borda da Vercel. Limite compartilhado por IP pode afetar alunos da mesma rede.'
+  performance:
+    status: CONCERNS
+    notes: 'Entrada faz uma escrita extra no banco e uma criação de tabela por chamada. Aceito; o tutor não é afetado.'
+  reliability:
+    status: PASS
+    notes: 'Falha de helper não afeta o formato das respostas, que continua sendo o mesmo para os clientes atuais.'
+  maintainability:
+    status: PASS
+    notes: 'Helper único elimina cópias de json em sete rotas.'
+
+recommendations:
+  immediate:
+    - action: 'Testar o limite em banco de desenvolvimento: 21 entradas seguidas geram 429, e a janela reabre após 10 minutos.'
+      refs: ['app/lib/http/rateLimit.ts']
+    - action: 'Testar a mensagem de 429 no navegador.'
+      refs: ['app/src/App.tsx']
+  future:
+    - action: 'Ler error.code do corpo em todas as telas, em vez do status HTTP.'
+      refs: ['app/src/api/client.ts']
+    - action: 'Avaliar limite na criação de sessão.'
+      refs: ['app/api/sessions/index.ts']
