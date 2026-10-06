@@ -5,6 +5,7 @@ import { SceneInvestigar, SceneCriar, SceneResolver, SceneColaborar, SceneReflec
 import type { Session, Path, Message, DashboardData } from "./shared/contracts";
 import { apiCreateSession, apiEraseSession, apiJoinSession, postJson, getRequest, clearLegacyCredentials } from "./api/client";
 import { codeFromSearch, entryFor, needsSession, ROUTES, screenFromPath, type Screen } from "./shared/routes";
+import { findExercise } from "../lib/tutor/escada";
 import QRCode from "qrcode";
 import logoSocratesAi from "@/imports/logoSocratesAi.svg";
 
@@ -622,7 +623,7 @@ function StudentFocus({ onBack, onContinue }: { onBack: () => void; onContinue: 
 const EXERCISE_ID = "f1-avaliacao-1";
 const DEFAULT_MISSION = "Vamos pensar juntos.";
 
-function StudentChat({ sessionId, mission, path, focusActive: initFocus, focusSecs: initSecs, onBack, onFinish }: { sessionId: string; mission: string | null; path: Path; focusActive: boolean; focusSecs: number; onBack: () => void; onFinish: () => void }) {
+function StudentChat({ sessionId, objective, mission, path, focusActive: initFocus, focusSecs: initSecs, onBack, onFinish }: { sessionId: string; objective: string; mission: string | null; path: Path; focusActive: boolean; focusSecs: number; onBack: () => void; onFinish: () => void }) {
   const [messages, setMessages] = useState<Message[]>([
     { role: "ai", text: `Oi! ${mission ?? DEFAULT_MISSION} Se f(x) = 2x + 3, quanto vale f(4)? Me conta como você pensaria para resolver.` },
   ]);
@@ -687,7 +688,7 @@ function StudentChat({ sessionId, mission, path, focusActive: initFocus, focusSe
           <button onClick={onBack} className="self-start text-sm font-bold py-1" style={{ color: "var(--muted-foreground)" }}>← Voltar</button>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold mb-0.5" style={{ color: "var(--muted-foreground)" }}>{pathLabel} — mudanças climáticas</p>
+              <p className="text-xs font-semibold mb-0.5" style={{ color: "var(--muted-foreground)" }}>{pathLabel} — {objective}</p>
               <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>Nível de raciocínio: {level}/3</p>
             </div>
             <div className="flex items-center gap-2">
@@ -765,14 +766,14 @@ function StudentChat({ sessionId, mission, path, focusActive: initFocus, focusSe
           </div>
         </div>
         </div>
-        <aside className="hidden lg:flex flex-col gap-5 w-96 shrink-0 p-8" style={{ background: "var(--card)", borderLeft: "2px solid var(--border)" }}>
+        <aside className="hidden lg:flex flex-col gap-5 w-96 shrink-0 p-8 overflow-y-auto" style={{ background: "var(--card)", borderLeft: "2px solid var(--border)" }}>
           <div className="cartoon-card p-5">
             <p className="text-xs font-extrabold mb-1" style={{ color: "var(--muted-foreground)" }}>TRILHA</p>
             <p className="text-lg font-extrabold" style={{ color: "var(--foreground)" }}>{pathLabel}</p>
           </div>
           <div className="cartoon-card p-5">
             <p className="text-xs font-extrabold mb-1" style={{ color: "var(--muted-foreground)" }}>EXERCÍCIO DE HOJE</p>
-            <p className="text-base font-bold" style={{ color: "var(--foreground)" }}>Se f(x) = 2x + 3, quanto vale f(4)?</p>
+            <p className="text-base font-bold" style={{ color: "var(--foreground)" }}>{findExercise(exerciseId)?.statement ?? ""}</p>
           </div>
           <div className="cartoon-card p-5">
             <p className="text-xs font-extrabold mb-3" style={{ color: "var(--muted-foreground)" }}>NÍVEL DE RACIOCÍNIO</p>
@@ -1194,7 +1195,7 @@ export default function App() {
       {screen === "teacher-activated"  && <TeacherActivated session={session} onBack={() => go("teacher-activate")} onViewDashboard={() => go("teacher-dashboard")} />}
       {screen === "student-paths"      && <StudentPaths objective={session?.objective ?? "Objetivo ainda não definido"} onBack={() => go("student-checkin")} onChoose={handleChoosePath} />}
       {screen === "student-focus"      && <StudentFocus onBack={() => go("student-paths")} onContinue={handleFocusContinue} />}
-      {screen === "student-chat"       && <StudentChat sessionId={session?.id ?? "sem-sessao"} mission={mission} path={path} focusActive={focusActive} focusSecs={focusSecs} onBack={() => go("student-focus")} onFinish={() => go("student-reflection")} />}
+      {screen === "student-chat"       && <StudentChat sessionId={session?.id ?? "sem-sessao"} objective={session?.objective ?? ""} mission={mission} path={path} focusActive={focusActive} focusSecs={focusSecs} onBack={() => go("student-focus")} onFinish={() => go("student-reflection")} />}
       {/* Ao terminar, o aluno volta à entrada: o painel é só do professor. */}
       {screen === "student-reflection" && <StudentReflection onSend={() => { saveState(null); setSession(null); go("intro"); }} />}
       {screen === "teacher-dashboard"  && <TeacherDashboard session={session} onBack={() => go("teacher-activated")} onErased={() => { saveState(null); setSession(null); go("intro"); }} />}
