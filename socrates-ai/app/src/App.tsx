@@ -716,8 +716,8 @@ function StudentChat({ sessionId, objective, mission, path, focusActive: initFoc
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3 scrollbar-hide">
-         <div className="flex flex-col gap-3 w-full lg:max-w-3xl lg:mx-auto">
+        <div className="flex-1 overflow-y-auto px-4 lg:px-6 py-4 flex flex-col gap-3 scrollbar-hide">
+         <div className="flex flex-col gap-3 w-full">
           {messages.map((m, i) => (
             <div key={i} className={`flex ${m.role === "student" ? "justify-end" : "justify-start"}`}>
               {m.role === "ai" && (
