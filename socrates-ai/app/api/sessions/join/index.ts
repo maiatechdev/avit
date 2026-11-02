@@ -25,7 +25,7 @@ export default async function handler(request: Request): Promise<Response> {
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) return errorResponse("database_not_configured", 503);
 
-  const limitKey = `join:${clientKey(request)}`;
+  const limitKey = `join:${await clientKey(request)}`;
   try {
     // Só os códigos errados contam: a turma inteira entra pelo mesmo IP da escola.
     if (await isBlocked(databaseUrl, limitKey, JOIN_LIMIT)) {

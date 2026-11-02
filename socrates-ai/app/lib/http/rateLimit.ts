@@ -1,4 +1,5 @@
 import { neon } from "@neondatabase/serverless";
+import { hashToken } from "../auth/tokens";
 
 // Limite por janela fixa. O contador fica no banco, porque cada instância da função edge tem memória própria.
 
@@ -14,16 +15,28 @@ export const TUTOR_PARTICIPANT_LIMIT: Limit = { hits: 30, windowSeconds: 600 };
 export const TUTOR_SESSION_LIMIT: Limit = { hits: 600, windowSeconds: 600 };
 
 // Linhas mais antigas que isto já não contam para nenhum limite e são apagadas.
-const RETENTION_SECONDS = 3600;
+export const RATE_LIMIT_RETENTION_SECONDS = 3600;
+
+export async function purgeRateLimits(databaseUrl: string): Promise<void> {
+  await ensureRateLimitTable(databaseUrl);
+  const sql = neon(databaseUrl);
+  await sql`DELETE FROM rate_limits WHERE window_start < now() - make_interval(secs => ${RATE_LIMIT_RETENTION_SECONDS})`;
+}
 
 export function isWithinLimit(hits: number, limit: number): boolean {
   return hits <= limit;
 }
 
-export function clientKey(request: Request): string {
+export function clientIp(request: Request): string {
   const forwarded = request.headers.get("x-forwarded-for") ?? "";
   const ip = forwarded.split(",")[0]?.trim();
   return ip && ip.length <= 64 ? ip : "desconhecido";
+}
+
+// O banco guarda só o hash do IP, nunca o endereço em texto. IP_HASH_SECRET, quando definido,
+// impede que alguém com acesso ao banco recupere o IP testando todos os endereços possíveis.
+export async function clientKey(request: Request, secret = process.env.IP_HASH_SECRET ?? ""): Promise<string> {
+  return hashToken(`${secret}:${clientIp(request)}`);
 }
 
 export async function ensureRateLimitTable(databaseUrl: string): Promise<void> {
@@ -49,7 +62,7 @@ export async function registerAttempt(databaseUrl: string, key: string, limit: L
                           THEN now() ELSE rate_limits.window_start END
     RETURNING hits`;
   // Os contadores guardam IPs: os vencidos saem logo, em vez de ficar no banco para sempre.
-  await sql`DELETE FROM rate_limits WHERE window_start < now() - make_interval(secs => ${RETENTION_SECONDS})`;
+  await sql`DELETE FROM rate_limits WHERE window_start < now() - make_interval(secs => ${RATE_LIMIT_RETENTION_SECONDS})`;
   const row = rows[0] as { hits: number };
   return isWithinLimit(row.hits, limit.hits);
 }

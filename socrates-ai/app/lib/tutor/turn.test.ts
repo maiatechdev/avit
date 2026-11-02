@@ -107,6 +107,22 @@ describe("runTurn: escada de dicas por aluno", () => {
     expect(result.exerciseId).toBe("f1-avaliacao-2");
   });
 
+  it("marca o exercício como revelado na explicação, e um acerto depois disso continua marcado", async () => {
+    const store = createMemoryAttemptsStore();
+    for (let i = 0; i < 4; i++) await turn(store, "aluno-a", WRONG);
+    expect(await store.get(SESSION, "aluno-a", EXERCISE)).toMatchObject({ revealed: true, solved: false });
+    // Ao recarregar, o chat volta ao exercício 1 e o aluno digita a resposta que acabou de ver.
+    await turn(store, "aluno-a", RIGHT);
+    expect(await store.get(SESSION, "aluno-a", EXERCISE)).toMatchObject({ revealed: true, solved: true });
+  });
+
+  it("um acerto sem explicação não fica marcado como revelado", async () => {
+    const store = createMemoryAttemptsStore();
+    await turn(store, "aluno-a", WRONG);
+    await turn(store, "aluno-a", RIGHT);
+    expect(await store.get(SESSION, "aluno-a", EXERCISE)).toMatchObject({ revealed: false, solved: true });
+  });
+
   it("os erros de um aluno não afetam o contador de outro", async () => {
     const store = createMemoryAttemptsStore();
     for (let i = 0; i < 3; i++) await turn(store, "aluno-a", WRONG);

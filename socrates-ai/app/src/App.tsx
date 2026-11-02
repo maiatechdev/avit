@@ -977,7 +977,7 @@ function TeacherDashboard({ session, onBack, onNewSession, onErased }: { session
     ? [
         { label: "Engajamento", value: data.engagement, sub: "escolheram uma trilha", color: "#2F6BE8" },
         { label: "Autonomia", value: data.autonomy, sub: "trilhas diferentes usadas pela turma", color: "#A16A00" },
-        { label: "Competência", value: data.competence, sub: "alunos que resolveram pelo menos um exercício", color: "#8A5CF0" },
+        { label: "Competência", value: data.competence, sub: "resolveram um exercício sem receber a explicação pronta", color: "#8A5CF0" },
         { label: "Vínculo", value: data.bond, sub: "escolheram colaborar", color: "#1F8F5F" },
       ]
     : [];

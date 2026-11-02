@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { errorResponse, json } from "./response";
-import { clientKey, isWithinLimit, JOIN_LIMIT, SESSION_CREATE_LIMIT, TUTOR_PARTICIPANT_LIMIT } from "./rateLimit";
+import { clientIp, clientKey, isWithinLimit, JOIN_LIMIT, SESSION_CREATE_LIMIT, TUTOR_PARTICIPANT_LIMIT } from "./rateLimit";
 
 describe("errorResponse", () => {
   it("devolve o código estável em error e a mensagem opcional", async () => {
@@ -36,7 +36,16 @@ describe("limite de tentativas", () => {
 
   it("usa o primeiro IP do cabeçalho x-forwarded-for", () => {
     const req = new Request("https://x.test", { headers: { "x-forwarded-for": "203.0.113.7, 10.0.0.1" } });
-    expect(clientKey(req)).toBe("203.0.113.7");
-    expect(clientKey(new Request("https://x.test"))).toBe("desconhecido");
+    expect(clientIp(req)).toBe("203.0.113.7");
+    expect(clientIp(new Request("https://x.test"))).toBe("desconhecido");
+  });
+
+  it("guarda só o hash do IP, que muda com o segredo", async () => {
+    const req = new Request("https://x.test", { headers: { "x-forwarded-for": "203.0.113.7" } });
+    const key = await clientKey(req, "a");
+    expect(key).toMatch(/^[0-9a-f]{64}$/);
+    expect(key).not.toContain("203.0.113.7");
+    expect(await clientKey(req, "a")).toBe(key);
+    expect(await clientKey(req, "b")).not.toBe(key);
   });
 });

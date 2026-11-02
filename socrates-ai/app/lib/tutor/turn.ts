@@ -51,14 +51,16 @@ export async function runTurn(
   if (state.solved) {
     const next = nextExercise(input.exerciseId);
     const nextState = await deps.store.get(input.sessionId, input.participantId, next.id);
+    // Um exercício já explicado pelo tutor também não volta: o aluno já viu a resposta.
+    const nextDone = nextState.solved || nextState.revealed;
     return {
       action: "solved",
       resultado: "correta",
-      resposta_ao_aluno: nextState.solved
+      resposta_ao_aluno: nextDone
         ? "Valeu por explicar! Você resolveu todos os exercícios de hoje. Quando quiser, toque em \"Concluí o desafio!\"."
         : `Valeu por explicar! Agora tenta um parecido: ${next.statement}`,
       wrongCount: 0,
-      exerciseId: nextState.solved ? input.exerciseId : next.id,
+      exerciseId: nextDone ? input.exerciseId : next.id,
     };
   }
 
@@ -87,6 +89,7 @@ export async function runTurn(
   await deps.store.save(input.sessionId, input.participantId, input.exerciseId, {
     wrongCount: decision.wrongCount,
     solved: decision.action === "solved",
+    revealed: state.revealed || decision.action === "explain",
   });
 
   return {

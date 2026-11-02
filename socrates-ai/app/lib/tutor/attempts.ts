@@ -1,6 +1,7 @@
 import { neon } from "@neondatabase/serverless";
 
-export type AttemptState = { wrongCount: number; solved: boolean };
+// revealed: o tutor já explicou a solução. Um acerto depois disso não conta como competência no painel.
+export type AttemptState = { wrongCount: number; solved: boolean; revealed: boolean };
 
 export interface AttemptsStore {
   get(sessionId: string, participantId: string, exerciseId: string): Promise<AttemptState>;
@@ -19,6 +20,7 @@ export async function ensureAttemptsTable(databaseUrl: string): Promise<void> {
       updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
       PRIMARY KEY (session_id, participant_id, exercise_id)
     )`;
+  await sql`ALTER TABLE participant_attempts ADD COLUMN IF NOT EXISTS revealed BOOLEAN NOT NULL DEFAULT FALSE`;
 }
 
 export function createNeonAttemptsStore(databaseUrl: string): AttemptsStore {
@@ -37,17 +39,17 @@ export function createNeonAttemptsStore(databaseUrl: string): AttemptsStore {
         VALUES (${sessionId}, ${participantId}, ${exerciseId})
         ON CONFLICT (session_id, participant_id, exercise_id) DO NOTHING`;
       const rows = await sql`
-        SELECT wrong_count, solved FROM participant_attempts
+        SELECT wrong_count, solved, revealed FROM participant_attempts
         WHERE session_id = ${sessionId} AND participant_id = ${participantId} AND exercise_id = ${exerciseId}`;
-      const row = rows[0] as { wrong_count: number; solved: boolean };
-      return { wrongCount: row.wrong_count, solved: row.solved };
+      const row = rows[0] as { wrong_count: number; solved: boolean; revealed: boolean };
+      return { wrongCount: row.wrong_count, solved: row.solved, revealed: row.revealed };
     },
 
     async save(sessionId, participantId, exerciseId, state) {
       await ensureSchema();
       await sql`
         UPDATE participant_attempts
-        SET wrong_count = ${state.wrongCount}, solved = ${state.solved}, updated_at = now()
+        SET wrong_count = ${state.wrongCount}, solved = ${state.solved}, revealed = ${state.revealed}, updated_at = now()
         WHERE session_id = ${sessionId} AND participant_id = ${participantId} AND exercise_id = ${exerciseId}`;
     },
   };
@@ -58,7 +60,7 @@ export function createMemoryAttemptsStore(): AttemptsStore {
   const key = (s: string, p: string, e: string) => `${s}::${p}::${e}`;
   return {
     async get(sessionId, participantId, exerciseId) {
-      return data.get(key(sessionId, participantId, exerciseId)) ?? { wrongCount: 0, solved: false };
+      return data.get(key(sessionId, participantId, exerciseId)) ?? { wrongCount: 0, solved: false, revealed: false };
     },
     async save(sessionId, participantId, exerciseId, state) {
       data.set(key(sessionId, participantId, exerciseId), state);

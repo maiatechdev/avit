@@ -84,6 +84,7 @@ export async function readDashboard(databaseUrl: string, sessionId: string): Pro
   await ensureParticipationsTable(databaseUrl);
   await ensureAttemptsTable(databaseUrl);
 
+  // Competência conta só quem resolveu sem receber a explicação pronta do tutor.
   // Só conta quem fez check-in: escolhas e soluções de quem não entrou pelo check-in não entram nos percentuais.
   const [students] = await sql`
     SELECT COUNT(*)::int AS n, COUNT(*) FILTER (WHERE difficulty = 'nao_entendi')::int AS stuck
@@ -99,7 +100,7 @@ export async function readDashboard(databaseUrl: string, sessionId: string): Pro
     GROUP BY p.path`;
   const [solvers] = await sql`
     SELECT COUNT(DISTINCT a.participant_id)::int AS n FROM participant_attempts a
-    WHERE a.session_id = ${sessionId} AND a.solved
+    WHERE a.session_id = ${sessionId} AND a.solved AND NOT a.revealed
       AND EXISTS (SELECT 1 FROM checkins c WHERE c.session_id = a.session_id AND c.participant_id = a.participant_id)`;
 
   const paths: Partial<Record<PathId, number>> = {};

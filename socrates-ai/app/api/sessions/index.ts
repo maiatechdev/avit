@@ -25,7 +25,7 @@ export default async function handler(request: Request): Promise<Response> {
 
   try {
     // Cada sessão ocupa um dos 10 mil códigos por 90 dias: criar sem limite esgotaria os códigos.
-    if (!(await registerAttempt(databaseUrl, `create:${clientKey(request)}`, SESSION_CREATE_LIMIT))) {
+    if (!(await registerAttempt(databaseUrl, `create:${await clientKey(request)}`, SESSION_CREATE_LIMIT))) {
       return errorResponse("too_many_sessions", 429, "Muitas sessões criadas em pouco tempo. Tente de novo mais tarde.", {
         "retry-after": String(SESSION_CREATE_LIMIT.windowSeconds),
       });
