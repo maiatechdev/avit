@@ -1,6 +1,7 @@
 {
   "title": "Socrates AI",
-  "description": "This educational app enhances classroom learning for Brazilian high school students by guiding them through interactive, AI-mediated activities that promote critical thinking.",
+  "description": "Tutor socrático para a sala de aula: o professor define o objetivo e cada aluno resolve o desafio com perguntas e dicas, sem receber a resposta pronta.",
+  "language": "pt-BR",
   "robots": {
     "index": false
   },

@@ -9,9 +9,9 @@ export function QuestionBubble({ size = 16, color = "currentColor" }: { size?: n
   );
 }
 
-export function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
+export function Toggle({ on, onChange, label }: { on: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
-    <button role="switch" aria-checked={on} onClick={() => onChange(!on)} className="tap-scale shrink-0"
+    <button role="switch" aria-checked={on} aria-label={label} onClick={() => onChange(!on)} className="tap-scale shrink-0"
       style={{ width: 56, height: 32, borderRadius: 999, background: on ? "var(--ai)" : "var(--border)", border: "none", cursor: "pointer", transition: "background 0.25s", position: "relative" }}>
       <span style={{ position: "absolute", top: 4, left: on ? 28 : 4, width: 24, height: 24, borderRadius: "50%", background: "white", boxShadow: "0 1px 4px rgba(0,0,0,0.2)", transition: "left 0.22s cubic-bezier(.4,0,.2,1)", display: "block" }} />
     </button>

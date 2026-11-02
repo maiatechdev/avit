@@ -5,6 +5,7 @@ import type { Session } from "../shared/contracts";
 
 export async function apiCreateSession(objective: string): Promise<Session> {
   const res = await fetch("/api/sessions", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ objective }) });
+  if (res.status === 429) throw new Error("too_many_sessions");
   if (!res.ok) throw new Error(`sessions ${res.status}`);
   return (await res.json()) as Session;
 }

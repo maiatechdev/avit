@@ -46,13 +46,19 @@ export async function runTurn(
   const timeoutMs = deps.timeoutMs ?? PROVIDER_TIMEOUT_MS;
   const state = await deps.store.get(input.sessionId, input.participantId, input.exerciseId);
 
+  // Depois do acerto, o tutor pediu que o aluno explicasse o raciocínio. A mensagem seguinte é essa
+  // explicação: o tutor agradece e mostra o próximo exercício no próprio chat, que no celular não tem a lateral.
   if (state.solved) {
+    const next = nextExercise(input.exerciseId);
+    const nextState = await deps.store.get(input.sessionId, input.participantId, next.id);
     return {
       action: "solved",
       resultado: "correta",
-      resposta_ao_aluno: "Esse exercício já está resolvido. Quer tentar um parecido?",
+      resposta_ao_aluno: nextState.solved
+        ? "Valeu por explicar! Você resolveu todos os exercícios de hoje. Quando quiser, toque em \"Concluí o desafio!\"."
+        : `Valeu por explicar! Agora tenta um parecido: ${next.statement}`,
       wrongCount: 0,
-      exerciseId: nextExercise(input.exerciseId).id,
+      exerciseId: nextState.solved ? input.exerciseId : next.id,
     };
   }
 

@@ -12,7 +12,7 @@ import logoSocratesAi from "@/imports/logoSocratesAi.svg";
 // Botão de voltar padrão de todas as telas: usa a rota anterior do app, não o histórico do aparelho.
 function BackLink({ onClick, label = "← Voltar" }: { onClick: () => void; label?: string }) {
   return (
-    <button onClick={onClick} className="self-start text-sm font-bold mb-6 py-1" style={{ color: "var(--muted-foreground)" }}>
+    <button onClick={onClick} className="self-start text-sm font-bold mb-6 min-h-11 pr-3" style={{ color: "var(--muted-foreground)" }}>
       {label}
     </button>
   );
@@ -37,12 +37,14 @@ function Intro({ onEnter, onStudent, onPrivacy }: { onEnter: () => void; onStude
       >
         {/* Logo centered */}
         <div className="flex-1 flex flex-col items-center justify-center px-8 gap-8">
-          <img
-            src={logoSocratesAi}
-            alt="Socrates AI"
-            className="w-full object-contain"
-            style={{ maxWidth: 300 }}
-          />
+          <h1 className="w-full flex justify-center">
+            <img
+              src={logoSocratesAi}
+              alt="Socrates AI"
+              className="w-full object-contain"
+              style={{ maxWidth: 300 }}
+            />
+          </h1>
 
           {/* Slogan */}
           <p
@@ -52,7 +54,6 @@ function Intro({ onEnter, onStudent, onPrivacy }: { onEnter: () => void; onStude
               fontFamily: "Nunito, sans-serif",
               fontSize: "clamp(15px, 4.2vw, 18px)",
               letterSpacing: "0.04em",
-              textShadow: "0 1px 4px rgba(0,0,0,0.12)",
             }}
           >
             Transformando o smartphone em uma ferramenta de aprendizagem.
@@ -86,7 +87,7 @@ function Intro({ onEnter, onStudent, onPrivacy }: { onEnter: () => void; onStude
           >
             Uso pedagógico mediado — Lei 15.100/2025
           </p>
-          <button onClick={onPrivacy} className="text-center text-xs font-bold underline" style={{ color: "var(--muted-foreground)" }}>
+          <button onClick={onPrivacy} className="self-center text-xs font-bold underline min-h-11 px-3" style={{ color: "var(--muted-foreground)" }}>
             Política de privacidade
           </button>
         </div>
@@ -100,14 +101,14 @@ function Intro({ onEnter, onStudent, onPrivacy }: { onEnter: () => void; onStude
 function TeacherActivate({ onActivate, onBack }: { onActivate: (session: Session) => void; onBack: () => void }) {
   const [objective, setObjective] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<"limit" | "generic" | null>(null);
   const activate = async () => {
     setBusy(true);
-    setError(false);
+    setError(null);
     try {
       onActivate(await apiCreateSession(objective.trim()));
-    } catch {
-      setError(true);
+    } catch (error) {
+      setError(error instanceof Error && error.message === "too_many_sessions" ? "limit" : "generic");
     } finally {
       setBusy(false);
     }
@@ -141,7 +142,8 @@ function TeacherActivate({ onActivate, onBack }: { onActivate: (session: Session
             <textarea
               value={objective}
               onChange={(e) => setObjective(e.target.value)}
-              placeholder="Ex: Compreender mudanças climáticas"
+              aria-label="Objetivo da aula"
+              placeholder="Ex: Calcular valores de uma função afim"
               rows={4}
               className="w-full resize-none text-base leading-relaxed outline-none transition-all"
               style={{
@@ -155,16 +157,16 @@ function TeacherActivate({ onActivate, onBack }: { onActivate: (session: Session
               }}
             />
             <p className="text-xs mt-2 ml-1" style={{ color: "var(--muted-foreground)" }}>
-              Quanto mais específico, mais a IA consegue guiar os alunos.
+              Nesta versão, o tutor conduz exercícios de função afim (1º ano do ensino médio).
             </p>
           </div>
 
           <div className="rounded-2xl p-4 flex flex-col gap-2" style={{ background: "var(--muted)" }}>
             <p className="text-xs font-semibold" style={{ color: "var(--muted-foreground)" }}>IDEIAS DE HOJE</p>
             {[
-              "Compreender as causas da desigualdade no Brasil",
-              "Analisar o impacto das redes sociais na saúde mental",
-              "Explorar soluções sustentáveis para resíduos urbanos",
+              "Calcular o valor de uma função afim",
+              "Entender o que significa substituir x em f(x)",
+              "Revisar a ordem das operações em funções do 1º grau",
             ].map((t) => (
               <button key={t} onClick={() => setObjective(t)} className="tap-scale text-left text-sm py-1.5 px-3 rounded-xl"
                 style={{ background: "rgba(255,255,255,0.65)", color: "var(--foreground)", fontFamily: "Outfit, sans-serif" }}>
@@ -186,7 +188,11 @@ function TeacherActivate({ onActivate, onBack }: { onActivate: (session: Session
             {busy ? "Criando sessão…" : "Ativar sessão pra turma"}
           </button>
           {error && (
-            <p className="text-sm text-center" style={{ color: "#B42318" }}>Não consegui criar a sessão agora. Tente de novo.</p>
+            <p className="text-sm text-center" style={{ color: "#B42318" }}>
+              {error === "limit"
+                ? "Muitas sessões criadas nesta rede em pouco tempo. Tente de novo daqui a uma hora."
+                : "Não consegui criar a sessão agora. Tente de novo."}
+            </p>
           )}
         </div>
       </div>
@@ -268,10 +274,11 @@ function TeacherActivated({ session, onBack, onViewDashboard }: { session: Sessi
 // ── Screen 3: Student Path Choice ────────────────────────────────────────────
 
 const PATHS = [
-  { id: "investigar", Scene: SceneInvestigar, title: "Investigar", desc: "Pesquisar e comparar fontes", activeBorder: "#F5B82E", activeBg: "#FFF8DD" },
-  { id: "criar",      Scene: SceneCriar,      title: "Criar",      desc: "Produzir um vídeo curto",   activeBorder: "#FF7A59", activeBg: "#FFF0EB" },
-  { id: "resolver",   Scene: SceneResolver,   title: "Resolver",   desc: "Solucionar um problema real", activeBorder: "#2FB67C", activeBg: "#E9FAF2" },
-  { id: "colaborar",  Scene: SceneColaborar,  title: "Colaborar",  desc: "Desenvolver solução em grupo", activeBorder: "#8E6CFF", activeBg: "#F1EDFF" },
+  // A trilha é o jeito de pensar o desafio; a conversa com o tutor é a mesma para todas.
+  { id: "investigar", Scene: SceneInvestigar, title: "Investigar", desc: "Testar hipóteses antes de responder", activeBorder: "#F5B82E", activeBg: "#FFF8DD" },
+  { id: "criar",      Scene: SceneCriar,      title: "Criar",      desc: "Montar seu próprio jeito de explicar", activeBorder: "#FF7A59", activeBg: "#FFF0EB" },
+  { id: "resolver",   Scene: SceneResolver,   title: "Resolver",   desc: "Ir direto à conta, passo a passo", activeBorder: "#2FB67C", activeBg: "#E9FAF2" },
+  { id: "colaborar",  Scene: SceneColaborar,  title: "Colaborar",  desc: "Pensar junto com um colega ao lado", activeBorder: "#8E6CFF", activeBg: "#F1EDFF" },
 ];
 
 function StudentJoin({ onJoined, onBack }: { onJoined: (session: Session) => void; onBack: () => void }) {
@@ -303,9 +310,7 @@ function StudentJoin({ onJoined, onBack }: { onJoined: (session: Session) => voi
   return (
     <Shell>
       <div className="screen-enter flex flex-col min-h-[100svh] px-6 pt-10 pb-24 lg:mx-auto lg:max-w-lg lg:w-full">
-        <button onClick={onBack} className="self-start text-sm font-bold mb-8" style={{ color: "var(--muted-foreground)" }}>
-          ← Voltar
-        </button>
+        <BackLink onClick={onBack} />
         <div className="cartoon-card p-6 flex flex-col gap-4">
           <h1 className="text-2xl font-extrabold" style={{ color: "var(--foreground)" }}>Digite o código da sessão</h1>
           <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
@@ -558,10 +563,10 @@ function StudentFocus({ onBack, onContinue }: { onBack: () => void; onContinue: 
         </div>
 
         <h1 className="text-[22px] font-extrabold leading-snug mb-2">
-          Quer silenciar as notificações enquanto resolve o desafio?
+          Quer marcar um tempo de foco para o desafio?
         </h1>
         <p className="text-sm mb-8" style={{ color: "var(--muted-foreground)" }}>
-          Você pode ativar ou pular — a escolha é sua.
+          Você pode ativar ou pular. A escolha é sua.
         </p>
 
         </div>
@@ -570,17 +575,17 @@ function StudentFocus({ onBack, onContinue }: { onBack: () => void; onContinue: 
           style={{ background: "var(--card)", border: `1.5px solid ${enabled ? "rgba(101,108,199,0.4)" : "var(--border)"}`, transition: "border-color 0.25s" }}>
           <div>
             <p className="text-base font-semibold" style={{ color: "var(--foreground)" }}>Modo Foco</p>
-            <p className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>Silencia notificações durante o desafio</p>
+            <p className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>Mostra um cronômetro durante a conversa</p>
           </div>
-          <Toggle on={enabled} onChange={setEnabled} />
+          <Toggle on={enabled} onChange={setEnabled} label="Modo Foco" />
         </div>
 
         <p className="text-xs mb-6 ml-1" style={{ color: "var(--muted-foreground)" }}>
-          Você pode desativar a qualquer momento, sem perder seu progresso.
+          Dica: silencie as notificações do celular antes de começar. Dá para parar o foco a qualquer momento.
         </p>
 
-        {/* Duration chips — animated show/hide */}
-        <div style={{ overflow: "hidden", maxHeight: enabled ? 130 : 0, opacity: enabled ? 1 : 0, transition: "max-height 0.32s ease, opacity 0.25s ease" }}>
+        {/* Duration chips — animated show/hide. Escondidos, saem da ordem do teclado. */}
+        <div inert={!enabled} aria-hidden={!enabled} style={{ overflow: "hidden", maxHeight: enabled ? 130 : 0, opacity: enabled ? 1 : 0, transition: "max-height 0.32s ease, opacity 0.25s ease" }}>
           <p className="text-xs font-semibold mb-3" style={{ color: "var(--muted-foreground)" }}>DURAÇÃO</p>
           <div className="flex gap-2 flex-wrap">
             {DURATIONS.map((d) => (
@@ -596,12 +601,6 @@ function StudentFocus({ onBack, onContinue }: { onBack: () => void; onContinue: 
                 )}
               </button>
             ))}
-          </div>
-          <div className="flex items-center gap-2 mt-4 px-3 py-2.5 rounded-xl" style={{ background: "var(--ai-muted)" }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="var(--ai)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0">
-              <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" strokeWidth="2.4" />
-            </svg>
-            <p className="text-xs" style={{ color: "var(--ai)" }}>Baseado no tempo médio de desafios como esse.</p>
           </div>
         </div>
 
@@ -664,15 +663,26 @@ function StudentChat({ sessionId, objective, mission, path, focusActive: initFoc
     setSending(true);
     try {
       const res = await postJson("/api/tutor/turn", { sessionId, exerciseId, message: text });
-      if (!res.ok) throw new Error(`tutor ${res.status}`);
+      if (!res.ok) throw new Error(String(res.status));
       const data = (await res.json()) as { action: string; resposta_ao_aluno: string; exerciseId: string };
       setExerciseId(data.exerciseId);
       setMessages((p) => [...p, { role: "ai", text: data.resposta_ao_aluno }]);
       setLevel(data.action === "solved" ? 3 : 2);
-    } catch {
+    } catch (error) {
+      const status = error instanceof Error ? error.message : "";
+      // A mensagem do aluno volta para o campo, para ele não ter de digitar de novo.
+      setInput(text);
       setMessages((p) => [
         ...p,
-        { role: "ai", text: "Não consegui falar com o tutor agora. Tente enviar de novo." },
+        {
+          role: "ai",
+          text:
+            status === "401"
+              ? "Sua entrada na sessão expirou. Volte ao início e entre de novo com o código do professor."
+              : status === "429"
+                ? "Muitas mensagens seguidas. Espere um minuto e envie de novo."
+                : "Não consegui falar com o tutor agora. Sua mensagem continua no campo: tente enviar de novo.",
+        },
       ]);
     } finally {
       setSending(false);
@@ -685,7 +695,8 @@ function StudentChat({ sessionId, objective, mission, path, focusActive: initFoc
         <div className="flex flex-col flex-1 min-w-0 min-h-0">
         {/* Header */}
         <div className="px-5 pt-4 pb-4 flex flex-col gap-3" style={{ background: "var(--card)", borderBottom: "1px solid var(--border)" }}>
-          <button onClick={onBack} className="self-start text-sm font-bold py-1" style={{ color: "var(--muted-foreground)" }}>← Voltar</button>
+          <button onClick={onBack} className="self-start text-sm font-bold min-h-11 pr-3" style={{ color: "var(--muted-foreground)" }}>← Voltar</button>
+          <h1 className="sr-only">Conversa com o tutor</h1>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold mb-0.5" style={{ color: "var(--muted-foreground)" }}>{pathLabel} — {objective}</p>
@@ -700,9 +711,9 @@ function StudentChat({ sessionId, objective, mission, path, focusActive: initFoc
                     </svg>
                     <span className="text-xs font-medium" style={{ color: "var(--ai)" }}>Foco · {fmt(secsLeft)}</span>
                   </div>
-                  <button onClick={stopFocus} className="tap-scale text-xs px-2 py-1 rounded-xl"
-                    style={{ color: "var(--muted-foreground)", background: "var(--muted)" }}>
-                    Encerrar
+                  <button onClick={stopFocus} className="tap-scale text-xs font-bold px-3 min-h-11 rounded-xl"
+                    style={{ color: "var(--foreground)", background: "var(--muted)" }}>
+                    Parar foco
                   </button>
                 </>
               ) : (
@@ -717,7 +728,7 @@ function StudentChat({ sessionId, objective, mission, path, focusActive: initFoc
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-4 lg:px-6 py-4 flex flex-col gap-3 scrollbar-hide">
-         <div className="flex flex-col gap-3 w-full">
+         <div role="log" aria-live="polite" aria-label="Conversa com o tutor" className="flex flex-col gap-3 w-full">
           {messages.map((m, i) => (
             <div key={i} className={`flex ${m.role === "student" ? "justify-end" : "justify-start"}`}>
               {m.role === "ai" && (
@@ -740,6 +751,9 @@ function StudentChat({ sessionId, objective, mission, path, focusActive: initFoc
               </div>
             </div>
           ))}
+          {sending && (
+            <p className="text-sm font-bold ml-10" style={{ color: "var(--muted-foreground)" }}>O tutor está pensando…</p>
+          )}
           <div ref={bottomRef} />
          </div>
         </div>
@@ -753,11 +767,11 @@ function StudentChat({ sessionId, objective, mission, path, focusActive: initFoc
           <div className="flex items-end gap-2">
             <textarea value={input} onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-              placeholder="Escreva sua resposta…" rows={1}
+              placeholder="Escreva sua resposta…" rows={1} aria-label="Sua resposta para o tutor"
               className="flex-1 resize-none text-sm outline-none py-3 px-4 rounded-xl"
               style={{ background: "var(--muted)", color: "var(--foreground)", fontFamily: "Outfit, sans-serif", maxHeight: 100, border: "1.5px solid transparent" }} />
-            <button onClick={handleSend} disabled={!input.trim() || sending}
-              className="tap-scale w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+            <button onClick={handleSend} disabled={!input.trim() || sending} aria-label="Enviar resposta"
+              className="tap-scale w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
               style={{ background: input.trim() ? "var(--primary)" : "var(--muted)" }}>
               <svg viewBox="0 0 24 24" fill="none" stroke={input.trim() ? "white" : "var(--muted-foreground)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
                 <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
@@ -835,10 +849,10 @@ function StudentReflection({ onSend }: { onSend: () => void }) {
 
         <div className="px-5 pt-5 flex-1 flex flex-col lg:px-0 lg:pt-0">
           <h1 className="text-2xl lg:text-4xl font-extrabold mb-1">
-            {submitted ? "Boa! Você mandou bem 🎉" : "Como você se sentiu?"}
+            {submitted ? "Boa! Você mandou bem." : "Como você se sentiu?"}
           </h1>
           <p className="text-sm mb-6" style={{ color: "var(--muted-foreground)" }}>
-            Sua resposta ajuda o professor a entender o que funcionou.
+            Um minuto para pensar no seu caminho. Esta resposta fica só com você: o app não a envia ao professor.
           </p>
 
           <div className="grid grid-cols-2 gap-3 mb-7">
@@ -876,7 +890,7 @@ function StudentReflection({ onSend }: { onSend: () => void }) {
               background: feeling !== null && !submitted ? "var(--primary)" : "var(--muted)",
               color: feeling !== null && !submitted ? "var(--primary-foreground)" : "var(--muted-foreground)",
             }}>
-            {submitted ? "Enviado!" : "Enviar"}
+            {submitted ? "Pronto!" : "Concluir"}
           </button>
         </div>
       </div>
@@ -902,7 +916,7 @@ function PrivacyPage({ onBack }: { onBack: () => void }) {
           Esta é uma versão de demonstração. Os dados abaixo são os que o app realmente guarda.
         </p>
         <div className="flex flex-col gap-4">
-          {section("O que é guardado", "O código e o objetivo da sessão, as respostas do check-in (dificuldade, tempo disponível e sentimento), a trilha escolhida, a quantidade de tentativas em cada exercício e um código aleatório do aparelho que liga essas respostas à sessão. Não pedimos nome, e-mail, documento nem foto.")}
+          {section("O que é guardado", "O código e o objetivo da sessão, as respostas do check-in (dificuldade, tempo disponível e sentimento), a trilha escolhida, a quantidade de tentativas em cada exercício e um código aleatório do aparelho que liga essas respostas à sessão. Não pedimos nome, e-mail, documento nem foto. Para limitar tentativas, o endereço IP de quem erra o código ou cria uma sessão fica guardado por até uma hora. A reflexão do fim do desafio não é enviada.")}
           {section("Quem vê", "O professor da sessão vê apenas os totais da turma, no painel. Cada aluno vê só a própria sessão. Ninguém vê as respostas de outro aluno.")}
           {section("Tutor de IA", "As mensagens que você escreve no chat são enviadas ao serviço de IA do Google (Gemini) para gerar a resposta do tutor. O app não grava o texto dessas mensagens.")}
           {section("Por quanto tempo", "Os dados de cada sessão são apagados automaticamente após 90 dias. O professor também pode apagar os dados da turma antes, pelo botão no painel.")}
@@ -916,7 +930,7 @@ function PrivacyPage({ onBack }: { onBack: () => void }) {
 // ── Screen 7: Teacher Dashboard ───────────────────────────────────────────────
 
 
-function TeacherDashboard({ session, onBack, onErased }: { session: Session | null; onBack: () => void; onErased: () => void }) {
+function TeacherDashboard({ session, onBack, onNewSession, onErased }: { session: Session | null; onBack: () => void; onNewSession: () => void; onErased: () => void }) {
   const [data, setData] = useState<DashboardData | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "empty" | "error" | "locked">("loading");
   const [confirmErase, setConfirmErase] = useState(false);
@@ -1079,7 +1093,7 @@ function TeacherDashboard({ session, onBack, onErased }: { session: Session | nu
         {session && shownStatus !== "locked" && (
           <div className="mb-4">
             {!confirmErase ? (
-              <button onClick={() => setConfirmErase(true)} className="text-sm font-bold underline" style={{ color: "#B42318" }}>
+              <button onClick={() => setConfirmErase(true)} className="text-sm font-bold underline min-h-11" style={{ color: "#B42318" }}>
                 Apagar dados desta turma
               </button>
             ) : (
@@ -1101,7 +1115,7 @@ function TeacherDashboard({ session, onBack, onErased }: { session: Session | nu
           </div>
         )}
 
-        <button onClick={onBack} className="cartoon-btn w-full py-4 text-base font-extrabold"
+        <button onClick={onNewSession} className="cartoon-btn w-full py-4 text-base font-extrabold lg:max-w-sm lg:self-center"
           style={{ background: "var(--primary)", color: "#FFFFFF" }}>
           Nova sessão
         </button>
@@ -1198,7 +1212,7 @@ export default function App() {
       {screen === "student-chat"       && <StudentChat sessionId={session?.id ?? "sem-sessao"} objective={session?.objective ?? ""} mission={mission} path={path} focusActive={focusActive} focusSecs={focusSecs} onBack={() => go("student-focus")} onFinish={() => go("student-reflection")} />}
       {/* Ao terminar, o aluno volta à entrada: o painel é só do professor. */}
       {screen === "student-reflection" && <StudentReflection onSend={() => { saveState(null); setSession(null); go("intro"); }} />}
-      {screen === "teacher-dashboard"  && <TeacherDashboard session={session} onBack={() => go("teacher-activated")} onErased={() => { saveState(null); setSession(null); go("intro"); }} />}
+      {screen === "teacher-dashboard"  && <TeacherDashboard session={session} onBack={() => go("teacher-activated")} onNewSession={() => go("teacher-activate")} onErased={() => { saveState(null); setSession(null); go("intro"); }} />}
     </div>
   );
 }

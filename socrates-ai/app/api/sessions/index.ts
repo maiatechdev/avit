@@ -2,6 +2,7 @@ import { createNeonSessionsStore } from "../../lib/sessions/store";
 import { createSession, SessionCodeCollisionError, validateObjective } from "../../lib/sessions/service";
 import { purgeExpired } from "../../lib/privacy/retention";
 import { errorResponse, json } from "../../lib/http/response";
+import { clientKey, registerAttempt, SESSION_CREATE_LIMIT } from "../../lib/http/rateLimit";
 import { credentialCookie, teacherCookieName } from "../../lib/auth/cookies";
 
 export const config = { runtime: "edge" };
@@ -23,6 +24,12 @@ export default async function handler(request: Request): Promise<Response> {
   if (!databaseUrl) return errorResponse("database_not_configured", 503);
 
   try {
+    // Cada sessão ocupa um dos 10 mil códigos por 90 dias: criar sem limite esgotaria os códigos.
+    if (!(await registerAttempt(databaseUrl, `create:${clientKey(request)}`, SESSION_CREATE_LIMIT))) {
+      return errorResponse("too_many_sessions", 429, "Muitas sessões criadas em pouco tempo. Tente de novo mais tarde.", {
+        "retry-after": String(SESSION_CREATE_LIMIT.windowSeconds),
+      });
+    }
     const { teacherToken, ...session } = await createSession(objective, createNeonSessionsStore(databaseUrl));
     // Limpeza do prazo de retenção a cada criação de sessão. Se falhar, a sessão nova ainda é criada.
     await purgeExpired(databaseUrl).catch(() => undefined);

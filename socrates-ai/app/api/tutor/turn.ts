@@ -5,6 +5,7 @@ import { runTurn, TutorUnavailableError, UnknownExerciseError } from "../../lib/
 import { resolveParticipant } from "../../lib/participants/participants";
 import { participantCookieName, readCookie } from "../../lib/auth/cookies";
 import { errorResponse, json } from "../../lib/http/response";
+import { registerAttempt, TUTOR_PARTICIPANT_LIMIT, TUTOR_SESSION_LIMIT } from "../../lib/http/rateLimit";
 
 export const config = { runtime: "edge" };
 
@@ -43,6 +44,16 @@ export default async function handler(request: Request): Promise<Response> {
     const token = readCookie(request, participantCookieName(sessionId));
     const participantId = token ? await resolveParticipant(databaseUrl, sessionId, token) : null;
     if (!participantId) return errorResponse("invalid_participant", 401, "Entre de novo na sessão.");
+
+    // Cada turno pode chamar o Gemini: sem limite, um script esgota a cota da turma inteira.
+    const withinLimits =
+      (await registerAttempt(databaseUrl, `tutor:${sessionId}:${participantId}`, TUTOR_PARTICIPANT_LIMIT)) &&
+      (await registerAttempt(databaseUrl, `tutor:${sessionId}`, TUTOR_SESSION_LIMIT));
+    if (!withinLimits) {
+      return errorResponse("too_many_turns", 429, "Muitas mensagens seguidas. Espere um pouco e tente de novo.", {
+        "retry-after": "60",
+      });
+    }
 
     const result = await runTurn(
       { sessionId, participantId, exerciseId, message },

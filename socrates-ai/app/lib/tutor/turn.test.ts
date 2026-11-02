@@ -44,9 +44,22 @@ describe("isCorrectAnswer (juiz)", () => {
   it("recusa negação, alternativas, pergunta e outro número", () => {
     expect(isCorrectAnswer("não é 11", "11")).toBe(false);
     expect(isCorrectAnswer("11 ou 10", "11")).toBe(false);
+    expect(isCorrectAnswer("10 ou 11", "11")).toBe(false);
     expect(isCorrectAnswer("é 11?", "11")).toBe(false);
     expect(isCorrectAnswer("eu acho que é 10", "11")).toBe(false);
     expect(isCorrectAnswer("2 · 4 + 3 = 11 mas não sei", "11")).toBe(false);
+    expect(isCorrectAnswer("-11", "11")).toBe(false);
+    expect(isCorrectAnswer("111", "11")).toBe(false);
+  });
+
+  it("aceita a resposta certa quando o aluno mostra a conta", () => {
+    expect(isCorrectAnswer("8 + 3 = 11", "11")).toBe(true);
+    expect(isCorrectAnswer("2*4+3 = 11", "11")).toBe(true);
+    expect(isCorrectAnswer("troquei x por 4 e deu 11", "11")).toBe(true);
+    expect(isCorrectAnswer("2x = 8, 8 + 3 = 11", "11")).toBe(true);
+    expect(isCorrectAnswer("11,0", "11")).toBe(true);
+    expect(isCorrectAnswer("é 11 sim, não tenho dúvida", "11")).toBe(true);
+    expect(isCorrectAnswer("11 é o resultado de f(4)", "11")).toBe(true);
   });
 });
 
@@ -74,6 +87,24 @@ describe("runTurn: escada de dicas por aluno", () => {
     for (let i = 0; i < 4; i++) await turn(store, "aluno-a", WRONG);
     const result = await turn(store, "aluno-a", "7", "f1-avaliacao-2");
     expect(result.action).toBe("solved");
+  });
+
+  it("depois do acerto, recebe a explicação do aluno e mostra o próximo exercício no chat", async () => {
+    const store = createMemoryAttemptsStore();
+    await turn(store, "aluno-a", RIGHT);
+    const result = await turn(store, "aluno-a", "multipliquei 2 por 4 e somei 3");
+    expect(result.resposta_ao_aluno).toContain("Valeu por explicar");
+    expect(result.resposta_ao_aluno).toContain("f(2)");
+    expect(result.exerciseId).toBe("f1-avaliacao-2");
+  });
+
+  it("avisa quando todos os exercícios estão resolvidos, sem voltar ao primeiro", async () => {
+    const store = createMemoryAttemptsStore();
+    await turn(store, "aluno-a", RIGHT);
+    await turn(store, "aluno-a", "7", "f1-avaliacao-2");
+    const result = await turn(store, "aluno-a", "fiz 3 vezes 2 mais 1", "f1-avaliacao-2");
+    expect(result.resposta_ao_aluno).toContain("todos os exercícios");
+    expect(result.exerciseId).toBe("f1-avaliacao-2");
   });
 
   it("os erros de um aluno não afetam o contador de outro", async () => {

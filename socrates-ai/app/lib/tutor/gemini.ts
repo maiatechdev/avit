@@ -27,7 +27,7 @@ function instructionFor(args: ReplyArgs): string {
   }
   if (args.action === "explain") {
     return [
-      "O aluno errou três vezes. Explique o exercício passo a passo, sem ser condescendente, usando estas etapas:",
+      "O aluno errou de novo depois de três dicas. Explique o exercício passo a passo, sem ser condescendente, usando estas etapas:",
       ...args.exercise.steps.map((s, i) => `${i + 1}. ${s}`),
       `Depois, proponha o exercício parecido: "${args.next.statement}". Não resolva esse exercício.`,
     ].join("\n");
