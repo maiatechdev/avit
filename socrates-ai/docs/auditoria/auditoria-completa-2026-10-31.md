@@ -199,3 +199,9 @@ O que não avançou foi a parte pedagógica do PRD: FR6 Níveis, FR8 Reflexão, 
 3. **Trilhas:** dar a cada trilha uma atividade própria (escopo grande) ou reescrever a copy para dizer que elas mudam o jeito do tutor conduzir, não o formato.
 
 Nenhuma correção de código foi feita nesta rodada.
+
+## 8. Decisões tomadas
+
+1. **Provedor de IA (2026-11-02): manter o Gemini.** O protótipo será usado só na apresentação para a banca, com adultos, e não com alunos reais. O P0-1 fica aceito para esse escopo. Uso com alunos reais exige trocar de provedor antes.
+2. **Reflexão (Story 4.1):** a promessa saiu da tela; gravar continua fora do escopo.
+3. **Trilhas (Story 4.1):** a copy foi reescrita para descrever o jeito de pensar.

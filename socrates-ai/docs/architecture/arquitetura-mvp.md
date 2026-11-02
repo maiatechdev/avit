@@ -70,7 +70,7 @@ O painel lê só agregados por sessão e só conta quem fez check-in. Não há t
 | Risco | Impacto | Mitigação |
 |---|---|---|
 | Limite do plano gratuito do Gemini | Demo para no meio | Limite de turnos por aluno e por sessão; testar o roteiro inteiro antes |
-| Termos do Gemini vedam menores | Uso com alunos reais fica proibido | Gemini desligado com alunos reais; decisão de provedor pendente |
+| Termos do Gemini vedam menores | Uso com alunos reais fica proibido | Decisão de 2026-11-02: protótipo só para a banca, com o Gemini mantido; trocar de provedor antes de qualquer uso com alunos |
 | Cold start das funções | Primeira resposta lenta | Aquecer a função antes da apresentação |
 | IA devolver a resposta pronta | Quebra do princípio socrático | Validação no servidor do formato e teste automatizado da escada de dicas |
 | Persistência sem configurar | Dados perdidos entre chamadas | Banco definido na Story 1.1 antes de qualquer tela depender dele |

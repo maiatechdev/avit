@@ -35,8 +35,8 @@ Apoiar o professor com um painel de turma e o aluno com um tutor socrático dura
 | Risco | Probabilidade | Impacto | Situação |
 |---|---|---|---|
 | Token guardado em cookie HttpOnly (Story 3.9): não legível por script da página | Baixa | Alto | Mitigado; falta teste no navegador |
-| Mensagens de alunos enviadas ao Gemini | Média | Alto | Termos da chave verificados pelo responsável; registrar a verificação |
-| Limpeza só roda ao criar sessão | Média | Médio | Dados antigos podem ficar até a próxima criação |
+| Mensagens enviadas ao Gemini | Baixa | Alto | Termos verificados em 2026-10-31: a Gemini API exige 18 anos e veda serviços usados por menores. Decisão de 2026-11-02: o protótipo é só para a banca (adultos), com o Gemini mantido; o link não deve circular entre alunos |
+| Limpeza só roda ao criar sessão | Baixa | Médio | Mitigado pela rotina diária (Story 4.2), desde que `CRON_SECRET` esteja configurada na Vercel |
 | Sessões anteriores à Story 3.5 não podem ser apagadas pelo professor | Baixa | Médio | Limpeza automática do prazo cobre |
 | Falta de análise jurídica (LGPD art. 14, ECA Digital) | Alta | Alto | Pendente; bloqueia uso com alunos reais |
 
@@ -48,4 +48,4 @@ O PRD (`docs/prd/prd-mvp-avit.md`) afirmava que nenhum dado pessoal é coletado.
 
 1. Análise jurídica por profissional habilitado, antes de qualquer uso com alunos reais.
 2. Testar o fluxo com cookies no navegador, em localhost e em produção (Story 3.9).
-3. Registrar a verificação dos termos do Gemini junto a este documento.
+3. Termos do Gemini verificados (2026-10-31) e decisão registrada (2026-11-02): uso restrito à apresentação para a banca. Qualquer uso com alunos reais exige trocar de provedor antes.
