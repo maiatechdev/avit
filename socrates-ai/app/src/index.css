@@ -37,6 +37,11 @@
   --accent-foreground: #142463;
   --ai: #6C8CFF;
   --ai-muted: rgba(108, 140, 255, 0.16);
+  /* Texto na cor da IA: --ai tem só ~3:1; --ai-ink passa de 5:1 sobre branco, creme e --ai-muted. */
+  --ai-ink: #3550C8;
+  --success-bg: #E9FAF2;
+  --success-ink: #17734C;
+  --danger: #B42318;
   --border: #142463;
   --border-soft: #C9D4F2;
   --ring: #2F6BE8;
@@ -123,4 +128,5 @@ h1, h2, h3, h4, h5, h6 { font-family: 'Nunito', sans-serif; }
 .cartoon-btn:disabled {
   box-shadow: none;
   transform: none;
+  cursor: not-allowed;
 }

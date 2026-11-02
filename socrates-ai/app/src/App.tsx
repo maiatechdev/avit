@@ -117,12 +117,6 @@ function TeacherActivate({ onActivate, onBack }: { onActivate: (session: Session
     <Shell wide>
       <div className="screen-enter flex flex-col min-h-[100svh] px-6 pt-6 pb-8 lg:mx-auto lg:max-w-2xl lg:w-full lg:py-12">
         <BackLink onClick={onBack} />
-        <div className="flex items-center gap-2 self-start mb-8">
-          <span className="w-2 h-2 rounded-full block" style={{ background: "var(--ai)" }} />
-          <span className="text-xs font-medium" style={{ color: "var(--ai)" }}>
-            Uso pedagógico ativo — Lei 15.100/2025
-          </span>
-        </div>
 
         <div className="mb-8">
           <div className="w-11 h-11 rounded-2xl flex items-center justify-center mb-4" style={{ background: "var(--primary)" }}>
@@ -156,7 +150,7 @@ function TeacherActivate({ onActivate, onBack }: { onActivate: (session: Session
                 boxShadow: objective ? "0 0 0 3px rgba(47,107,232,0.15)" : "none",
               }}
             />
-            <p className="text-xs mt-2 ml-1" style={{ color: "var(--muted-foreground)" }}>
+            <p className="text-sm mt-2 ml-1" style={{ color: "var(--muted-foreground)" }}>
               Nesta versão, o tutor conduz exercícios de função afim (1º ano do ensino médio).
             </p>
           </div>
@@ -178,7 +172,7 @@ function TeacherActivate({ onActivate, onBack }: { onActivate: (session: Session
           <button
             onClick={activate}
             disabled={!objective.trim() || busy}
-            className="btn-bounce w-full py-4 text-base font-bold rounded-2xl"
+            className="cartoon-btn w-full py-4 text-base font-extrabold"
             style={{
               background: objective.trim() ? "var(--primary)" : "var(--muted)",
               color: objective.trim() ? "var(--primary-foreground)" : "var(--muted-foreground)",
@@ -188,12 +182,15 @@ function TeacherActivate({ onActivate, onBack }: { onActivate: (session: Session
             {busy ? "Criando sessão…" : "Ativar sessão pra turma"}
           </button>
           {error && (
-            <p className="text-sm text-center" style={{ color: "#B42318" }}>
+            <p className="text-sm text-center" style={{ color: "var(--danger)" }}>
               {error === "limit"
                 ? "Muitas sessões criadas nesta rede em pouco tempo. Tente de novo daqui a uma hora."
                 : "Não consegui criar a sessão agora. Tente de novo."}
             </p>
           )}
+          <p className="text-sm text-center" style={{ color: "var(--muted-foreground)" }}>
+            Uso pedagógico mediado pelo professor, conforme a Lei 15.100/2025.
+          </p>
         </div>
       </div>
     </Shell>
@@ -203,67 +200,114 @@ function TeacherActivate({ onActivate, onBack }: { onActivate: (session: Session
 // ── Screen 2: Teacher Activated (QR) ─────────────────────────────────────────
 
 // QR real: aponta para a entrada do aluno já com o código preenchido.
-function SessionQr({ url }: { url: string }) {
+function SessionQr({ url, size = 192 }: { url: string; size?: number }) {
   const [src, setSrc] = useState<string | null>(null);
   useEffect(() => {
     let cancelled = false;
-    QRCode.toDataURL(url, { margin: 1, width: 192, color: { dark: "#142463", light: "#FFFFFF" } })
+    QRCode.toDataURL(url, { margin: 1, width: size, color: { dark: "#142463", light: "#FFFFFF" } })
       .then((data) => { if (!cancelled) setSrc(data); })
       .catch(() => { if (!cancelled) setSrc(null); });
     return () => { cancelled = true; };
-  }, [url]);
+  }, [url, size]);
   return src ? (
-    <img src={src} alt="QR code para entrar na sessão" width={192} height={192} className="rounded-2xl" />
+    <img src={src} alt="QR code para entrar na sessão" width={size} height={size} className="rounded-2xl max-w-full h-auto" />
   ) : (
-    <div style={{ width: 192, height: 192 }} className="rounded-2xl" aria-hidden="true" />
+    <div style={{ width: size, height: size }} className="rounded-2xl max-w-full" aria-hidden="true" />
+  );
+}
+
+// Tela feita para o projetor da sala: código enorme e QR grande, legíveis do fundo da sala.
+function ProjectionView({ code, joinUrl, onClose }: { code: string; joinUrl: string; onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  return (
+    <div role="dialog" aria-modal="true" aria-label="Código da sessão para projetar"
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-8 p-6 overflow-y-auto"
+      style={{ background: "var(--background)" }}>
+      <p className="text-xl lg:text-3xl font-extrabold text-center">Entre em {window.location.host} e digite o código</p>
+      <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-16">
+        <p className="font-extrabold tracking-[0.08em] leading-none whitespace-nowrap" style={{ fontSize: "clamp(56px, 11vw, 168px)", color: "var(--foreground)" }}>
+          {code}
+        </p>
+        <div className="cartoon-card p-4">
+          <SessionQr url={joinUrl} size={360} />
+        </div>
+      </div>
+      <button onClick={onClose} autoFocus className="cartoon-btn px-8 py-3 text-base font-extrabold"
+        style={{ background: "var(--card)", color: "var(--foreground)" }}>
+        Fechar projeção
+      </button>
+    </div>
   );
 }
 
 function TeacherActivated({ session, onBack, onViewDashboard }: { session: Session | null; onBack: () => void; onViewDashboard: () => void }) {
   const joinUrl = session ? `${window.location.origin}${ROUTES["student-join"]}?codigo=${encodeURIComponent(session.code)}` : "";
+  const [projecting, setProjecting] = useState(false);
+  const [copied, setCopied] = useState<"ok" | "fail" | null>(null);
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(joinUrl);
+      setCopied("ok");
+    } catch {
+      setCopied("fail");
+    }
+  };
+
   return (
     <Shell wide>
-      <div className="screen-enter flex flex-col min-h-[100svh] px-6 pt-6 pb-8 lg:mx-auto lg:max-w-lg lg:w-full lg:py-12">
+      {projecting && session && <ProjectionView code={session.code} joinUrl={joinUrl} onClose={() => setProjecting(false)} />}
+      <div className="screen-enter flex flex-col min-h-[100svh] px-6 pt-6 pb-8 lg:mx-auto lg:max-w-4xl lg:w-full lg:py-12">
         <BackLink onClick={onBack} />
-        <div className="flex items-center gap-2 mb-8">
-          <span className="w-2 h-2 rounded-full block" style={{ background: "#2FB67C" }} />
-          <span className="text-xs font-medium" style={{ color: "var(--muted-foreground)" }}>Sessão ativa — Lei 15.100/2025</span>
+
+        <div className="mb-6 lg:mb-10">
+          <h1 className="text-2xl lg:text-3xl font-extrabold mb-1">Sessão ativada</h1>
+          <p className="text-sm lg:text-base" style={{ color: "var(--muted-foreground)" }}>
+            Peça para a turma escanear o QR ou digitar o código.
+          </p>
         </div>
 
-        <div className="flex-1 flex flex-col items-center justify-center gap-6">
-          <div className="w-16 h-16 rounded-3xl flex items-center justify-center" style={{ background: "#E9FAF2" }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="#1F8F5F" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
+        <div className="flex-1 flex flex-col lg:flex-row items-center lg:items-start gap-6 lg:gap-10">
+          <div className="cartoon-card p-4 shrink-0">
+            {session && <SessionQr url={joinUrl} size={256} />}
           </div>
 
-          <div className="text-center">
-            <h2 className="text-2xl font-bold mb-1">Sessão ativada!</h2>
-            <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
-              Peça para a turma escanear o QR ou usar o código abaixo.
+          <div className="w-full flex flex-col gap-4">
+            <div className="cartoon-card px-6 py-5 text-center lg:text-left">
+              <p className="text-sm font-bold mb-1" style={{ color: "var(--muted-foreground)" }}>Código da sessão</p>
+              <p className="text-5xl lg:text-6xl font-extrabold tracking-[0.1em] whitespace-nowrap" style={{ color: "var(--foreground)" }}>
+                {session?.code ?? "SOC-----"}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <button onClick={() => setProjecting(true)} disabled={!session} className="cartoon-btn flex-1 min-w-40 py-3 px-4 text-base font-extrabold"
+                style={{ background: "var(--primary)", color: "#FFFFFF" }}>
+                Projetar na sala
+              </button>
+              <button onClick={copyLink} disabled={!session} className="cartoon-btn flex-1 min-w-40 py-3 px-4 text-base font-extrabold"
+                style={{ background: "var(--card)", color: "var(--foreground)" }}>
+                Copiar link
+              </button>
+            </div>
+            <p role="status" className="text-sm min-h-5" style={{ color: copied === "fail" ? "var(--danger)" : "var(--success-ink)" }}>
+              {copied === "ok" ? "Link copiado." : copied === "fail" ? "Não consegui copiar. Use o código acima." : ""}
             </p>
-          </div>
 
-          <div className="rounded-3xl p-5 flex flex-col items-center gap-4" style={{ background: "var(--card)", border: "1.5px solid var(--border)" }}>
-            {session && <SessionQr url={joinUrl} />}
-            <div className="px-6 py-3 rounded-2xl text-center" style={{ background: "var(--muted)" }}>
-              <p className="text-xs mb-1" style={{ color: "var(--muted-foreground)" }}>Código da sessão</p>
-              <p className="text-3xl font-bold tracking-[0.15em]" style={{ color: "var(--primary)" }}>{session?.code ?? "SOC-----"}</p>
+            <div className="rounded-2xl p-4" style={{ background: "var(--secondary)", border: "2px solid var(--border)" }}>
+              <p className="text-sm" style={{ color: "var(--secondary-foreground)" }}>
+                Objetivo: <strong>{session?.objective ?? "—"}</strong>
+              </p>
             </div>
           </div>
-
-          <div className="w-full rounded-2xl p-4 flex items-center gap-3" style={{ background: "var(--secondary)", border: "2px solid var(--border)" }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 shrink-0">
-              <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" strokeWidth="2.5" />
-            </svg>
-            <p className="text-sm" style={{ color: "var(--secondary-foreground)" }}>
-              Objetivo: <strong>{session?.objective ?? "—"}</strong>
-            </p>
-          </div>
         </div>
 
-        <button onClick={onViewDashboard} className="btn-bounce w-full py-4 text-base font-bold rounded-2xl mt-6 lg:max-w-md lg:mx-auto"
-          style={{ background: "var(--muted)", color: "var(--foreground)" }}>
+        <button onClick={onViewDashboard} className="cartoon-btn w-full py-4 text-base font-extrabold mt-8 lg:max-w-sm lg:self-end"
+          style={{ background: "var(--card)", color: "var(--foreground)" }}>
           Ver painel da turma
         </button>
       </div>
@@ -326,7 +370,7 @@ function StudentJoin({ onJoined, onBack }: { onJoined: (session: Session) => voi
             className="w-full text-2xl font-extrabold tracking-widest text-center py-4 rounded-2xl outline-none"
             style={{ background: "var(--muted)", border: "2px solid var(--border)", color: "var(--foreground)" }}
           />
-          {error && <p className="text-sm" style={{ color: "#B42318" }}>{error}</p>}
+          {error && <p className="text-sm" style={{ color: "var(--danger)" }}>{error}</p>}
           <button
             onClick={enter}
             disabled={!ready}
@@ -383,7 +427,7 @@ function StudentCheckin({ sessionId, onBack, onDone }: { sessionId: string; onBa
 
   const group = (title: string, key: "difficulty" | "time" | "feeling", options: readonly { value: string; label: string }[]) => (
     <div className="flex flex-col gap-2">
-      <p className="text-xs font-extrabold" style={{ color: "var(--muted-foreground)" }}>{title}</p>
+      <p className="text-sm font-extrabold" style={{ color: "var(--muted-foreground)" }}>{title}</p>
       <div className="flex flex-wrap gap-2">
         {options.map((option) => {
           const active = answers[key] === option.value;
@@ -422,7 +466,7 @@ function StudentCheckin({ sessionId, onBack, onDone }: { sessionId: string; onBa
           {group("Quanto tempo você tem hoje?", "time", CHECKIN_OPTIONS.time)}
           {group("Como você está se sentindo?", "feeling", CHECKIN_OPTIONS.feeling)}
         </div>
-        {error && <p className="text-sm mt-4" style={{ color: "#B42318" }}>{error}</p>}
+        {error && <p className="text-sm mt-4" style={{ color: "var(--danger)" }}>{error}</p>}
         <button
           onClick={send}
           disabled={!complete || busy}
@@ -449,7 +493,7 @@ function StudentPaths({ objective, onBack, onChoose }: { objective: string; onBa
             <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
           </svg>
           <div>
-            <p className="text-xs font-semibold mb-0.5" style={{ color: "var(--primary)" }}>OBJETIVO DE HOJE</p>
+            <p className="text-xs font-extrabold mb-0.5" style={{ color: "var(--foreground)" }}>OBJETIVO DE HOJE</p>
             <p className="text-sm font-medium" style={{ color: "var(--foreground)" }}>{objective}</p>
           </div>
         </div>
@@ -507,7 +551,7 @@ function StudentPaths({ objective, onBack, onChoose }: { objective: string; onBa
                   </div>
                   <div className="px-3 pt-2 pb-3">
                     <p className="text-sm font-bold mb-0.5" style={{ color: "var(--foreground)" }}>{p.title}</p>
-                    <p className="text-xs leading-snug" style={{ color: "var(--muted-foreground)" }}>{p.desc}</p>
+                    <p className="text-sm leading-snug" style={{ color: "var(--muted-foreground)" }}>{p.desc}</p>
                   </div>
                 </button>
               );
@@ -527,7 +571,7 @@ function StudentPaths({ objective, onBack, onChoose }: { objective: string; onBa
         <button
           onClick={() => selected && onChoose(selected)}
           disabled={!selected}
-          className="btn-bounce w-full py-4 text-base font-bold rounded-2xl mt-4"
+          className="cartoon-btn w-full py-4 text-base font-extrabold mt-4 lg:max-w-md lg:self-center"
           style={{ background: selected ? "var(--primary)" : "var(--muted)", color: selected ? "var(--primary-foreground)" : "var(--muted-foreground)" }}
         >
           Bora lá!
@@ -575,12 +619,12 @@ function StudentFocus({ onBack, onContinue }: { onBack: () => void; onContinue: 
           style={{ background: "var(--card)", border: `1.5px solid ${enabled ? "rgba(101,108,199,0.4)" : "var(--border)"}`, transition: "border-color 0.25s" }}>
           <div>
             <p className="text-base font-semibold" style={{ color: "var(--foreground)" }}>Modo Foco</p>
-            <p className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>Mostra um cronômetro durante a conversa</p>
+            <p className="text-sm mt-0.5" style={{ color: "var(--muted-foreground)" }}>Mostra um cronômetro durante a conversa</p>
           </div>
           <Toggle on={enabled} onChange={setEnabled} label="Modo Foco" />
         </div>
 
-        <p className="text-xs mb-6 ml-1" style={{ color: "var(--muted-foreground)" }}>
+        <p className="text-sm mb-6 ml-1" style={{ color: "var(--muted-foreground)" }}>
           Dica: silencie as notificações do celular antes de começar. Dá para parar o foco a qualquer momento.
         </p>
 
@@ -591,11 +635,11 @@ function StudentFocus({ onBack, onContinue }: { onBack: () => void; onContinue: 
             {DURATIONS.map((d) => (
               <button key={d.secs} onClick={() => setSelectedSecs(d.secs)}
                 className="tap-scale flex items-center gap-1.5 px-4 py-2.5 rounded-2xl text-sm font-semibold"
-                style={{ background: selectedSecs === d.secs ? "var(--ai)" : "var(--muted)", color: selectedSecs === d.secs ? "white" : "var(--foreground)" }}>
+                style={{ background: selectedSecs === d.secs ? "var(--ai-ink)" : "var(--muted)", color: selectedSecs === d.secs ? "white" : "var(--foreground)" }}>
                 {d.label}
                 {d.suggested && (
                   <span className="text-xs px-1.5 py-0.5 rounded-full font-medium"
-                    style={{ background: selectedSecs === d.secs ? "rgba(255,255,255,0.22)" : "rgba(101,108,199,0.12)", color: selectedSecs === d.secs ? "white" : "var(--ai)" }}>
+                    style={{ background: selectedSecs === d.secs ? "rgba(255,255,255,0.22)" : "rgba(101,108,199,0.12)", color: selectedSecs === d.secs ? "white" : "var(--ai-ink)" }}>
                     sugerido
                   </span>
                 )}
@@ -607,7 +651,7 @@ function StudentFocus({ onBack, onContinue }: { onBack: () => void; onContinue: 
         <div className="flex-1" />
 
         <button onClick={() => onContinue(enabled, enabled ? selectedSecs : 0)}
-          className="btn-bounce w-full py-4 text-base font-bold rounded-2xl"
+          className="cartoon-btn w-full py-4 text-base font-extrabold"
           style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}>
           Continuar
         </button>
@@ -630,6 +674,7 @@ function StudentChat({ sessionId, objective, mission, path, focusActive: initFoc
   const [level, setLevel] = useState(1);
   const [sending, setSending] = useState(false);
   const [exerciseId, setExerciseId] = useState(EXERCISE_ID);
+  const [confirmEnd, setConfirmEnd] = useState(false);
 
   const [focusOn, setFocusOn] = useState(initFocus);
   const [secsLeft, setSecsLeft] = useState(initSecs);
@@ -699,8 +744,8 @@ function StudentChat({ sessionId, objective, mission, path, focusActive: initFoc
           <h1 className="sr-only">Conversa com o tutor</h1>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold mb-0.5" style={{ color: "var(--muted-foreground)" }}>{pathLabel} — {objective}</p>
-              <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>Nível de raciocínio: {level}/3</p>
+              <p className="text-sm font-semibold mb-0.5" style={{ color: "var(--muted-foreground)" }}>{pathLabel} · {objective}</p>
+              <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>Nível de raciocínio: {level}/3</p>
             </div>
             <div className="flex items-center gap-2">
               {focusOn ? (
@@ -709,9 +754,9 @@ function StudentChat({ sessionId, objective, mission, path, focusActive: initFoc
                     <svg viewBox="0 0 24 24" fill="none" stroke="var(--ai)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
                       <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
                     </svg>
-                    <span className="text-xs font-medium" style={{ color: "var(--ai)" }}>Foco · {fmt(secsLeft)}</span>
+                    <span className="text-xs font-bold" style={{ color: "var(--ai-ink)" }}>Foco · {fmt(secsLeft)}</span>
                   </div>
-                  <button onClick={stopFocus} className="tap-scale text-xs font-bold px-3 min-h-11 rounded-xl"
+                  <button onClick={stopFocus} className="tap-scale text-sm font-bold px-3 min-h-11 rounded-xl"
                     style={{ color: "var(--foreground)", background: "var(--muted)" }}>
                     Parar foco
                   </button>
@@ -760,16 +805,36 @@ function StudentChat({ sessionId, objective, mission, path, focusActive: initFoc
 
         {/* Input bar */}
         <div className="px-4 pt-3 pb-4 flex flex-col gap-2" style={{ background: "var(--card)", borderTop: "1px solid var(--border)" }}>
-          <button onClick={onFinish} className="btn-bounce w-full py-3 text-sm font-bold rounded-xl"
-            style={{ background: showFinish ? "var(--secondary)" : "var(--muted)", color: showFinish ? "var(--secondary-foreground)" : "var(--foreground)", border: "2px solid var(--border)" }}>
-            {showFinish ? "Concluí o desafio!" : "Encerrar conversa"}
-          </button>
+          {showFinish ? (
+            <button onClick={onFinish} className="cartoon-btn w-full py-3 text-sm font-extrabold"
+              style={{ background: "var(--secondary)", color: "var(--secondary-foreground)" }}>
+              Concluí o desafio!
+            </button>
+          ) : confirmEnd ? (
+            // Sair no meio do desafio pede confirmação: um toque sem querer perderia a conversa.
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <p className="text-sm font-bold mr-auto">Encerrar sem terminar o desafio?</p>
+              <button onClick={() => setConfirmEnd(false)} className="cartoon-btn px-4 min-h-11 text-sm font-extrabold"
+                style={{ background: "var(--card)", color: "var(--foreground)" }}>
+                Continuar
+              </button>
+              <button onClick={onFinish} className="cartoon-btn px-4 min-h-11 text-sm font-extrabold"
+                style={{ background: "var(--muted)", color: "var(--foreground)" }}>
+                Encerrar
+              </button>
+            </div>
+          ) : (
+            <button onClick={() => setConfirmEnd(true)} className="self-end text-sm font-bold underline min-h-11 px-1"
+              style={{ color: "var(--muted-foreground)" }}>
+              Encerrar conversa
+            </button>
+          )}
           <div className="flex items-end gap-2">
             <textarea value={input} onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
               placeholder="Escreva sua resposta…" rows={1} aria-label="Sua resposta para o tutor"
               className="flex-1 resize-none text-sm outline-none py-3 px-4 rounded-xl"
-              style={{ background: "var(--muted)", color: "var(--foreground)", fontFamily: "Outfit, sans-serif", maxHeight: 100, border: "1.5px solid transparent" }} />
+              style={{ background: "var(--muted)", color: "var(--foreground)", fontFamily: "Outfit, sans-serif", maxHeight: 100, border: "2px solid var(--border)" }} />
             <button onClick={handleSend} disabled={!input.trim() || sending} aria-label="Enviar resposta"
               className="tap-scale w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
               style={{ background: input.trim() ? "var(--primary)" : "var(--muted)" }}>
@@ -801,7 +866,7 @@ function StudentChat({ sessionId, objective, mission, path, focusActive: initFoc
           {focusOn && (
             <div className="cartoon-card p-5">
               <p className="text-xs font-extrabold mb-1" style={{ color: "var(--muted-foreground)" }}>MODO FOCO</p>
-              <p className="text-lg font-extrabold" style={{ color: "var(--ai)" }}>{fmt(secsLeft)}</p>
+              <p className="text-lg font-extrabold" style={{ color: "var(--ai-ink)" }}>{fmt(secsLeft)}</p>
             </div>
           )}
         </aside>
@@ -865,7 +930,7 @@ function StudentReflection({ onSend }: { onSend: () => void }) {
                   boxShadow: feeling === i ? "none" : "0 1px 3px rgba(0,0,0,0.05)",
                 }}>
                 <span className="text-3xl mb-2">{f.emoji}</span>
-                <span className="text-xs font-semibold text-center leading-snug"
+                <span className="text-sm font-bold text-center leading-snug"
                   style={{ color: feeling === i ? "white" : "var(--foreground)" }}>
                   {f.label}
                 </span>
@@ -885,7 +950,7 @@ function StudentReflection({ onSend }: { onSend: () => void }) {
           </div>
 
           <button onClick={handleSubmit} disabled={feeling === null || submitted}
-            className="btn-bounce w-full py-4 text-base font-bold rounded-2xl mt-7"
+            className="cartoon-btn w-full py-4 text-base font-extrabold mt-7"
             style={{
               background: feeling !== null && !submitted ? "var(--primary)" : "var(--muted)",
               color: feeling !== null && !submitted ? "var(--primary-foreground)" : "var(--muted-foreground)",
@@ -936,6 +1001,9 @@ function TeacherDashboard({ session, onBack, onNewSession, onErased }: { session
   const [confirmErase, setConfirmErase] = useState(false);
   const [erasing, setErasing] = useState(false);
   const [eraseError, setEraseError] = useState(false);
+  const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const erase = async () => {
     if (!session) return;
@@ -950,35 +1018,46 @@ function TeacherDashboard({ session, onBack, onNewSession, onErased }: { session
     }
   };
 
+  // Lê o painel ao abrir, a cada 30 segundos e quando o professor toca em "Atualizar".
   useEffect(() => {
     if (!session) return;
     let cancelled = false;
-    getRequest(`/api/dashboard?sessionId=${encodeURIComponent(session.id)}`)
-      .then((res) => {
-        if (res.status === 401) throw new Error("locked");
-        if (!res.ok) throw new Error(String(res.status));
-        return res.json() as Promise<DashboardData>;
-      })
-      .then((body) => {
-        if (cancelled) return;
-        setData(body);
-        setStatus(body.students === 0 ? "empty" : "ready");
-      })
-      .catch((error: unknown) => {
-        if (!cancelled) setStatus(error instanceof Error && error.message === "locked" ? "locked" : "error");
-      });
+    const load = () => {
+      setRefreshing(true);
+      getRequest(`/api/dashboard?sessionId=${encodeURIComponent(session.id)}`)
+        .then((res) => {
+          if (res.status === 401) throw new Error("locked");
+          if (!res.ok) throw new Error(String(res.status));
+          return res.json() as Promise<DashboardData>;
+        })
+        .then((body) => {
+          if (cancelled) return;
+          setData(body);
+          setStatus(body.students === 0 ? "empty" : "ready");
+          setUpdatedAt(new Date());
+        })
+        .catch((error: unknown) => {
+          if (!cancelled) setStatus(error instanceof Error && error.message === "locked" ? "locked" : "error");
+        })
+        .finally(() => {
+          if (!cancelled) setRefreshing(false);
+        });
+    };
+    load();
+    const timer = setInterval(load, 30_000);
     return () => {
       cancelled = true;
+      clearInterval(timer);
     };
-  }, [session]);
+  }, [session, reloadKey]);
 
   const shownStatus = session ? status : "empty";
   const metrics = data
     ? [
-        { label: "Engajamento", value: data.engagement, sub: "escolheram uma trilha", color: "#2F6BE8" },
-        { label: "Autonomia", value: data.autonomy, sub: "trilhas diferentes usadas pela turma", color: "#A16A00" },
-        { label: "Competência", value: data.competence, sub: "resolveram um exercício sem receber a explicação pronta", color: "#8A5CF0" },
-        { label: "Vínculo", value: data.bond, sub: "escolheram colaborar", color: "#1F8F5F" },
+        { label: "Engajamento", value: data.engagement, sub: "escolheram uma trilha" },
+        { label: "Autonomia", value: data.autonomy, sub: "trilhas diferentes usadas pela turma" },
+        { label: "Competência", value: data.competence, sub: "resolveram um exercício sem receber a explicação pronta" },
+        { label: "Vínculo", value: data.bond, sub: "escolheram colaborar" },
       ]
     : [];
 
@@ -994,17 +1073,32 @@ function TeacherDashboard({ session, onBack, onNewSession, onErased }: { session
     <Shell wide>
       <div className="screen-enter flex flex-col min-h-[100svh] px-5 lg:px-10 pt-6 pb-8 overflow-y-auto scrollbar-hide lg:max-w-6xl lg:mx-auto lg:w-full">
         <BackLink onClick={onBack} />
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <p className="text-xs font-semibold mb-0.5" style={{ color: "var(--muted-foreground)" }}>PAINEL DO PROFESSOR</p>
-            <h1 className="text-xl font-bold leading-tight">{session?.objective ?? "Nenhuma sessão ativa"}</h1>
+        <div className="flex flex-wrap items-start justify-between gap-3 mb-2">
+          <div className="min-w-0">
+            <h1 className="text-2xl lg:text-3xl font-extrabold leading-tight">Painel da turma</h1>
+            <p className="text-base mt-1" style={{ color: "var(--secondary-foreground)" }}>{session?.objective ?? "Nenhuma sessão ativa"}</p>
           </div>
           {session && (
-            <div className="px-3 py-1.5 rounded-full text-xs font-semibold" style={{ background: "#E9FAF2", color: "#1F8F5F" }}>
+            <div className="px-3 py-1.5 rounded-full text-sm font-extrabold whitespace-nowrap" style={{ background: "var(--success-bg)", color: "var(--success-ink)" }}>
               {session.code}
             </div>
           )}
         </div>
+        {session && shownStatus !== "locked" && (
+          <div className="flex flex-wrap items-center gap-3 mb-6">
+            <p className="text-sm" style={{ color: "var(--muted-foreground)" }} aria-live="polite">
+              {refreshing
+                ? "Atualizando…"
+                : updatedAt
+                  ? `Atualizado às ${updatedAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}. Atualiza sozinho a cada 30 segundos.`
+                  : ""}
+            </p>
+            <button onClick={() => setReloadKey((k) => k + 1)} disabled={refreshing} className="cartoon-btn px-4 min-h-11 text-sm font-extrabold"
+              style={{ background: "var(--card)", color: "var(--foreground)" }}>
+              Atualizar
+            </button>
+          </div>
+        )}
 
         {shownStatus === "loading" && <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>Carregando dados da turma…</p>}
         {shownStatus === "empty" && (
@@ -1015,7 +1109,11 @@ function TeacherDashboard({ session, onBack, onNewSession, onErased }: { session
         )}
         {shownStatus === "error" && (
           <div className="cartoon-card p-6 mb-6">
-            <p className="text-base font-bold" style={{ color: "#B42318" }}>Não consegui carregar o painel agora.</p>
+            <p className="text-base font-bold" style={{ color: "var(--danger)" }}>Não consegui carregar o painel agora.</p>
+            <button onClick={() => setReloadKey((k) => k + 1)} className="cartoon-btn mt-4 px-4 min-h-11 text-sm font-extrabold"
+              style={{ background: "var(--card)", color: "var(--foreground)" }}>
+              Tentar de novo
+            </button>
           </div>
         )}
         {shownStatus === "locked" && (
@@ -1036,52 +1134,50 @@ function TeacherDashboard({ session, onBack, onNewSession, onErased }: { session
 
         {shownStatus === "ready" && data && data.enough && (
           <>
-            <div className="rounded-2xl p-4 mb-5 flex items-center justify-between" style={{ background: "var(--muted)", border: "2px solid var(--border)" }}>
-              <div className="text-center">
-                <p className="text-2xl font-extrabold" style={{ color: "var(--foreground)" }}>{data.students}</p>
-                <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>alunos no check-in</p>
+            {/* O achado principal vem primeiro, com a sugestão que sai dele. */}
+            <div className="rounded-2xl p-5 lg:p-6 mb-5 flex gap-4" style={{ background: "var(--secondary)", border: "3px solid var(--border)", boxShadow: "var(--sticker-shadow)" }}>
+              <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ background: "var(--ai-ink)", border: "2px solid var(--border)" }}>
+                <QuestionBubble size={22} color="white" />
+              </div>
+              <div>
+                <h2 className="text-xl lg:text-2xl font-extrabold leading-snug">
+                  {data.stuckShare}% dos {data.students} alunos ainda não entenderam o assunto
+                </h2>
+                <p className="text-base mt-2 leading-relaxed" style={{ color: "var(--secondary-foreground)" }}>
+                  <strong>Sugestão para a próxima aula:</strong> {data.suggestion}
+                </p>
+                <p className="text-sm mt-2" style={{ color: "var(--secondary-foreground)" }}>
+                  Fonte: resposta “não entendi ainda” no check-in.
+                </p>
               </div>
             </div>
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
               {metrics.map((m) => (
                 <div key={m.label} className="cartoon-card rounded-2xl p-4 flex flex-col gap-2">
-                  <p className="text-xs font-extrabold" style={{ color: "var(--muted-foreground)" }}>{m.label.toUpperCase()}</p>
-                  <p className="text-3xl font-extrabold" style={{ color: m.color }}>{m.value}%</p>
+                  <h3 className="text-sm font-extrabold">{m.label}</h3>
+                  <p className="text-3xl font-extrabold" style={{ color: "var(--foreground)" }}>{m.value}%</p>
                   <div className="w-full h-2 rounded-full" style={{ background: "var(--muted)" }}>
-                    <div className="h-full rounded-full" style={{ width: `${m.value}%`, background: m.color }} />
+                    <div className="h-full rounded-full" style={{ width: `${m.value}%`, background: "var(--primary)" }} />
                   </div>
-                  <p className="text-xs leading-snug" style={{ color: "var(--muted-foreground)" }}>{m.sub}</p>
+                  <p className="text-sm leading-snug" style={{ color: "var(--muted-foreground)" }}>{m.sub}</p>
                 </div>
               ))}
             </div>
 
-            <div className="lg:grid lg:grid-cols-2 lg:gap-5 lg:items-start">
-              <div className="rounded-2xl p-5 flex gap-3 mb-6" style={{ background: "var(--secondary)", border: "2px solid var(--border)" }}>
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "var(--ai)", border: "2px solid var(--border)" }}>
-                  <QuestionBubble size={20} color="white" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold mb-1.5" style={{ color: "var(--foreground)" }}>SUGESTÃO PARA A PRÓXIMA AULA</p>
-                  <p className="text-sm leading-relaxed" style={{ color: "var(--secondary-foreground)" }}>{data.suggestion}</p>
-                  <p className="text-xs mt-2" style={{ color: "var(--muted-foreground)" }}>
-                    {data.stuckShare}% dos alunos marcaram “não entendi ainda” no check-in.
-                  </p>
-                </div>
-              </div>
-
+            <div>
               <div className="cartoon-card rounded-2xl p-4 mb-6">
-                <p className="text-xs font-extrabold mb-4" style={{ color: "var(--muted-foreground)" }}>ESCOLHAS POR TRILHA</p>
+                <h2 className="text-base font-extrabold mb-4">Escolhas por trilha</h2>
                 {pathRows.map((r) => {
                   const count = data.pathCounts[r.key] ?? 0;
                   const share = totalChosen === 0 ? 0 : Math.round((count / totalChosen) * 100);
                   return (
                     <div key={r.key} className="flex items-center gap-3 mb-3 last:mb-0">
-                      <p className="text-xs font-bold w-20 shrink-0" style={{ color: "var(--foreground)" }}>{r.label}</p>
+                      <p className="text-sm font-bold w-24 shrink-0" style={{ color: "var(--foreground)" }}>{r.label}</p>
                       <div className="flex-1 h-2 rounded-full" style={{ background: "var(--muted)" }}>
                         <div className="h-full rounded-full" style={{ width: `${share}%`, background: r.color }} />
                       </div>
-                      <p className="text-xs w-16 text-right" style={{ color: "var(--muted-foreground)" }}>{count} · {share}%</p>
+                      <p className="text-sm w-20 text-right whitespace-nowrap" style={{ color: "var(--muted-foreground)" }}>{count} · {share}%</p>
                     </div>
                   );
                 })}
@@ -1093,7 +1189,7 @@ function TeacherDashboard({ session, onBack, onNewSession, onErased }: { session
         {session && shownStatus !== "locked" && (
           <div className="mb-4">
             {!confirmErase ? (
-              <button onClick={() => setConfirmErase(true)} className="text-sm font-bold underline min-h-11" style={{ color: "#B42318" }}>
+              <button onClick={() => setConfirmErase(true)} className="text-sm font-bold underline min-h-11" style={{ color: "var(--danger)" }}>
                 Apagar dados desta turma
               </button>
             ) : (
@@ -1101,7 +1197,7 @@ function TeacherDashboard({ session, onBack, onNewSession, onErased }: { session
                 <p className="text-sm">Isso apaga a sessão, os check-ins, as trilhas e as conversas de todos os alunos. Não dá para desfazer.</p>
                 <div className="flex gap-2">
                   <button onClick={erase} disabled={erasing} className="cartoon-btn px-4 py-2.5 text-sm font-extrabold"
-                    style={{ background: "#B42318", color: "#FFFFFF" }}>
+                    style={{ background: "var(--danger)", color: "#FFFFFF" }}>
                     {erasing ? "Apagando…" : "Sim, apagar"}
                   </button>
                   <button onClick={() => setConfirmErase(false)} disabled={erasing} className="cartoon-btn px-4 py-2.5 text-sm font-extrabold"
@@ -1109,7 +1205,7 @@ function TeacherDashboard({ session, onBack, onNewSession, onErased }: { session
                     Cancelar
                   </button>
                 </div>
-                {eraseError && <p className="text-sm" style={{ color: "#B42318" }}>Não consegui apagar agora. Tente de novo.</p>}
+                {eraseError && <p className="text-sm" style={{ color: "var(--danger)" }}>Não consegui apagar agora. Tente de novo.</p>}
               </div>
             )}
           </div>

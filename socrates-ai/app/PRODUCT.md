@@ -32,8 +32,8 @@ Teacher analytics (Engajamento / Autonomia / Competência / Vínculo) exist to m
 ## Capabilities and Constraints
 
 - Current stage: MVP demo for the AI course. The public deployment is a functional demo, not a live classroom service. Live use with real students is out of scope for this stage.
-- Tutor backend: a serverless endpoint on Vercel with a Postgres database (Neon). The AI provider is currently a deterministic test implementation; the final integration uses Google Gemini (AI Studio, free tier). The rules of the hint ladder live on the server.
-- Demo data is fictitious and created by the team. No personal data of students is collected.
+- Tutor backend: Vercel edge functions with a Postgres database (Neon). With `GEMINI_API_KEY` set, the tutor's replies come from Google Gemini (AI Studio, free tier); without it, a deterministic stub answers. The hint ladder and the answer judge always run on the server. The Gemini API terms forbid services directed at or likely used by people under 18, so Gemini must stay off for any use with real students (decision pending: stub, another provider with a DPA, or adult-only demos).
+- Demo data is fictitious and created by the team. The app does not ask for names, e-mails or documents, but it does store pseudonymous data per device: a random participant token, check-in answers, the chosen path and attempt counts per exercise. Rate-limit counters store only a hash of the IP address and are deleted after one hour. Sessions and their data are deleted after 90 days by a daily job, or earlier by the teacher. The end-of-challenge reflection is not sent anywhere.
 - Device/connectivity floor (shared or low-end Android phones, unreliable school wifi) is explicitly **undecided** — do not assume or design against a specific hardware/network baseline until this is confirmed.
 
 ## Brand Commitments
