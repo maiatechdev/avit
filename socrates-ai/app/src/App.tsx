@@ -33,7 +33,7 @@ function Intro({ onEnter, onStudent, onPrivacy }: { onEnter: () => void; onStude
       style={{ background: "var(--background)" }}
     >
       <div
-        className="relative w-full mx-auto max-w-3xl flex flex-col min-h-[100svh] items-center"
+        className="relative w-full mx-auto max-w-3xl lg:max-w-6xl flex flex-col lg:flex-row lg:gap-16 lg:px-12 min-h-[100svh] items-center"
       >
         {/* Logo centered */}
         <div className="flex-1 flex flex-col items-center justify-center px-8 gap-8">
@@ -41,8 +41,7 @@ function Intro({ onEnter, onStudent, onPrivacy }: { onEnter: () => void; onStude
             <img
               src={logoSocratesAi}
               alt="Socrates AI"
-              className="w-full object-contain"
-              style={{ maxWidth: 300 }}
+              className="w-full object-contain max-w-[300px] lg:max-w-[420px]"
             />
           </h1>
 
@@ -61,7 +60,7 @@ function Intro({ onEnter, onStudent, onPrivacy }: { onEnter: () => void; onStude
         </div>
 
         {/* CTA section */}
-        <div className="w-full px-6 pb-12 pt-4 flex flex-col gap-4">
+        <div className="w-full px-6 pb-12 pt-4 flex flex-col gap-4 lg:max-w-md lg:p-0">
           <button
             onClick={onEnter}
             className="cartoon-btn w-full py-4 text-base font-extrabold"
@@ -271,7 +270,7 @@ function TeacherActivated({ session, onBack, onViewDashboard }: { session: Sessi
           </p>
         </div>
 
-        <div className="flex-1 flex flex-col lg:flex-row items-center lg:items-start gap-6 lg:gap-10">
+        <div className="flex-1 lg:flex-none flex flex-col lg:flex-row items-center lg:items-start gap-6 lg:gap-10">
           <div className="cartoon-card p-4 shrink-0">
             {session && <SessionQr url={joinUrl} size={256} />}
           </div>
@@ -353,7 +352,7 @@ function StudentJoin({ onJoined, onBack }: { onJoined: (session: Session) => voi
 
   return (
     <Shell>
-      <div className="screen-enter flex flex-col min-h-[100svh] px-6 pt-10 pb-24 lg:mx-auto lg:max-w-lg lg:w-full">
+      <div className="screen-enter flex flex-col min-h-[100svh] px-6 pt-10 pb-24 lg:mx-auto lg:max-w-lg lg:w-full lg:justify-center lg:pb-16">
         <BackLink onClick={onBack} />
         <div className="cartoon-card p-6 flex flex-col gap-4">
           <h1 className="text-2xl font-extrabold" style={{ color: "var(--foreground)" }}>Digite o código da sessão</h1>
@@ -455,7 +454,7 @@ function StudentCheckin({ sessionId, onBack, onDone }: { sessionId: string; onBa
 
   return (
     <Shell>
-      <div className="screen-enter flex flex-col min-h-[100svh] px-5 pt-10 pb-8 lg:mx-auto lg:max-w-2xl lg:w-full">
+      <div className="screen-enter flex flex-col min-h-[100svh] px-5 pt-10 pb-8 lg:mx-auto lg:max-w-2xl lg:w-full lg:justify-center lg:pb-16">
         <BackLink onClick={onBack} />
         <h1 className="text-2xl font-extrabold mb-1" style={{ color: "var(--foreground)" }}>Antes de começar</h1>
         <p className="text-sm mb-6" style={{ color: "var(--muted-foreground)" }}>
@@ -508,12 +507,12 @@ function StudentPaths({ objective, onBack, onChoose }: { objective: string; onBa
         </div>
 
         {/* Mapa de trilhas: rota até o destino, com cada caminho como um ponto de controle */}
-        <div className="relative flex-1">
+        <div className="relative flex-1 lg:flex-none">
           <svg
             aria-hidden="true"
             viewBox="0 0 100 100"
             preserveAspectRatio="none"
-            className="absolute inset-0 w-full h-full pointer-events-none"
+            className="absolute inset-0 w-full h-full pointer-events-none lg:hidden"
           >
             <path
               d="M50 4 C 12 26, 88 40, 50 52 S 12 80, 50 96"
@@ -803,7 +802,7 @@ function StudentChat({ sessionId, objective, mission, path, focusActive: initFoc
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-4 lg:px-6 py-4 flex flex-col gap-3 scrollbar-hide">
-         <div role="log" aria-live="polite" aria-label="Conversa com o tutor" className="flex flex-col gap-3 w-full">
+         <div role="log" aria-live="polite" aria-label="Conversa com o tutor" className="flex flex-col gap-3 w-full lg:max-w-3xl lg:mx-auto">
           {messages.map((m, i) => (
             <div key={i} className={`flex ${m.role === "student" ? "justify-end" : "justify-start"}`}>
               {m.role === "ai" && (
@@ -834,7 +833,8 @@ function StudentChat({ sessionId, objective, mission, path, focusActive: initFoc
         </div>
 
         {/* Input bar */}
-        <div className="px-4 pt-3 pb-4 flex flex-col gap-2" style={{ background: "var(--card)", borderTop: "1px solid var(--border)" }}>
+        <div className="px-4 pt-3 pb-4" style={{ background: "var(--card)", borderTop: "1px solid var(--border)" }}>
+         <div className="flex flex-col gap-2 w-full lg:max-w-3xl lg:mx-auto">
           {showFinish ? (
             <button onClick={onFinish} className="cartoon-btn w-full py-3 text-sm font-extrabold"
               style={{ background: "var(--secondary)", color: "var(--secondary-foreground)" }}>
@@ -873,6 +873,7 @@ function StudentChat({ sessionId, objective, mission, path, focusActive: initFoc
               </svg>
             </button>
           </div>
+         </div>
         </div>
         </div>
         <aside className="hidden lg:flex flex-col gap-5 w-96 shrink-0 p-8 overflow-y-auto" style={{ background: "var(--card)", borderLeft: "2px solid var(--border)" }}>
@@ -936,13 +937,13 @@ function StudentReflection({ onSend }: { onSend: () => void }) {
   return (
     <Shell wide>
       <Confetti active={submitted} />
-      <div className="screen-enter flex flex-col min-h-[100svh] pb-24 lg:pb-16 lg:grid lg:grid-cols-2 lg:gap-12 lg:items-center lg:mx-auto lg:max-w-6xl lg:w-full lg:px-12">
+      <div className="screen-enter flex flex-col min-h-[100svh] pb-24 lg:pb-16 lg:justify-center lg:gap-8 lg:mx-auto lg:max-w-2xl lg:w-full">
         {/* Illustration banner */}
-        <div className="overflow-hidden" style={{ borderRadius: "0 0 24px 24px" }}>
+        <div className="overflow-hidden rounded-b-3xl lg:rounded-3xl lg:border-[3px] lg:border-[var(--border)]">
           <SceneReflection />
         </div>
 
-        <div className="px-5 pt-5 flex-1 flex flex-col lg:px-0 lg:pt-0">
+        <div className="px-5 pt-5 flex-1 flex flex-col lg:flex-none lg:px-0 lg:pt-0">
           <h1 className="text-2xl lg:text-4xl font-extrabold mb-1">
             {submitted ? "Boa! Você mandou bem." : "Como você se sentiu?"}
           </h1>
@@ -969,7 +970,7 @@ function StudentReflection({ onSend }: { onSend: () => void }) {
           </div>
 
           <h2 className="text-base font-bold mb-3">O que mais ajudou você?</h2>
-          <div className="flex flex-wrap gap-2 mb-auto">
+          <div className="flex flex-wrap gap-2 mb-auto lg:mb-0">
             {HELPED.map((h) => (
               <button key={h} onClick={() => toggleHelped(h)}
                 className="tap-scale px-4 py-2 rounded-full text-sm font-medium"
@@ -1003,14 +1004,14 @@ function PrivacyPage({ onBack }: { onBack: () => void }) {
     </div>
   );
   return (
-    <Shell>
-      <div className="screen-enter flex flex-col min-h-[100svh] px-5 pt-6 pb-8 lg:mx-auto lg:max-w-2xl lg:w-full">
+    <Shell wide>
+      <div className="screen-enter flex flex-col min-h-[100svh] px-5 pt-6 pb-8 lg:mx-auto lg:max-w-5xl lg:w-full lg:px-10">
         <BackLink onClick={onBack} />
-        <h1 className="text-2xl font-extrabold mb-1">Política de privacidade</h1>
+        <h1 className="text-2xl lg:text-3xl font-extrabold mb-1">Política de privacidade</h1>
         <p className="text-sm mb-6" style={{ color: "var(--muted-foreground)" }}>
           Esta é uma versão de demonstração. Os dados abaixo são os que o app realmente guarda.
         </p>
-        <div className="flex flex-col gap-4">
+        <div className="grid gap-4 lg:grid-cols-2 lg:gap-6">
           {section("O que é guardado", "O código e o objetivo da sessão, as respostas do check-in (dificuldade, tempo disponível e sentimento), a trilha escolhida, a quantidade de tentativas em cada exercício e um código aleatório do aparelho que liga essas respostas à sessão. Não pedimos nome, e-mail, documento nem foto. Para limitar tentativas, o endereço IP de quem erra o código ou cria uma sessão fica guardado por até uma hora. A reflexão do fim do desafio não é enviada.")}
           {section("Quem vê", "O professor da sessão vê apenas os totais da turma, no painel. Cada aluno vê só a própria sessão. Ninguém vê as respostas de outro aluno.")}
           {section("Tutor de IA", "As mensagens que você escreve no chat são enviadas ao serviço de IA do Google (Gemini) para gerar a resposta do tutor. O app não grava o texto dessas mensagens.")}
