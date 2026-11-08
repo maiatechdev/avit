@@ -1,4 +1,4 @@
-import { findExercise, leaksAnswer, nextAction, nextExercise, type Exercise, type TutorAction } from "./escada";
+import { EXERCISES, findExercise, leaksAnswer, nextAction, nextExercise, type Exercise, type TutorAction } from "./escada";
 import type { AttemptsStore } from "./attempts";
 import type { TutorProvider } from "./provider";
 
@@ -36,6 +36,18 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   });
 }
 
+// Próximo exercício, na ordem da lista, que o aluno ainda não resolveu nem recebeu explicado.
+// Um exercício explicado pelo tutor não volta: o aluno já viu a resposta.
+async function nextPending(input: TurnInput, store: AttemptsStore): Promise<Exercise | undefined> {
+  const start = EXERCISES.findIndex((exercise) => exercise.id === input.exerciseId);
+  for (let step = 1; step < EXERCISES.length; step++) {
+    const candidate = EXERCISES[(start + step) % EXERCISES.length];
+    const state = await store.get(input.sessionId, input.participantId, candidate.id);
+    if (!state.solved && !state.revealed) return candidate;
+  }
+  return undefined;
+}
+
 export async function runTurn(
   input: TurnInput,
   deps: { store: AttemptsStore; provider: TutorProvider; timeoutMs?: number },
@@ -49,25 +61,26 @@ export async function runTurn(
   // Depois do acerto, o tutor pediu que o aluno explicasse o raciocínio. A mensagem seguinte é essa
   // explicação: o tutor agradece e mostra o próximo exercício no próprio chat, que no celular não tem a lateral.
   if (state.solved) {
-    const next = nextExercise(input.exerciseId);
-    const nextState = await deps.store.get(input.sessionId, input.participantId, next.id);
-    // Um exercício já explicado pelo tutor também não volta: o aluno já viu a resposta.
-    const nextDone = nextState.solved || nextState.revealed;
+    const next = await nextPending(input, deps.store);
     return {
       action: "solved",
       resultado: "correta",
-      resposta_ao_aluno: nextDone
-        ? "Valeu por explicar! Você resolveu todos os exercícios de hoje. Quando quiser, toque em \"Concluí o desafio!\"."
-        : `Valeu por explicar! Agora tenta um parecido: ${next.statement}`,
+      resposta_ao_aluno: next
+        ? `Valeu por explicar! Agora tenta este: ${next.statement}`
+        : "Valeu por explicar! Você passou por todos os exercícios de hoje. Quando quiser, toque em \"Concluí o desafio!\".",
       wrongCount: 0,
-      exerciseId: nextDone ? input.exerciseId : next.id,
+      exerciseId: next ? next.id : input.exerciseId,
     };
   }
 
   const resultado = await withTimeout(deps.provider.judge(input.message, exercise), timeoutMs);
   const isCorrect = resultado === "correta";
   const decision = nextAction(state.wrongCount, isCorrect);
-  const next = nextExercise(input.exerciseId);
+  // Na explicação, o tutor propõe o próximo exercício pendente; nos outros casos, o seguinte da lista basta.
+  const next =
+    decision.action === "explain"
+      ? ((await nextPending(input, deps.store)) ?? nextExercise(input.exerciseId))
+      : nextExercise(input.exerciseId);
 
   let reply = await withTimeout(
     deps.provider.reply({

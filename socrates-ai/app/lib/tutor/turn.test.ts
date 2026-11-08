@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { leaksAnswer, nextAction } from "./escada";
+import { EXERCISES, leaksAnswer, nextAction } from "./escada";
 import { createMemoryAttemptsStore } from "./attempts";
 import { isCorrectAnswer, StubProvider, type TutorProvider } from "./provider";
 import { runTurn, TutorUnavailableError } from "./turn";
@@ -98,13 +98,28 @@ describe("runTurn: escada de dicas por aluno", () => {
     expect(result.exerciseId).toBe("f1-avaliacao-2");
   });
 
-  it("avisa quando todos os exercícios estão resolvidos, sem voltar ao primeiro", async () => {
+  it("avisa quando todos os exercícios foram feitos, sem voltar a um já resolvido", async () => {
     const store = createMemoryAttemptsStore();
-    await turn(store, "aluno-a", RIGHT);
-    await turn(store, "aluno-a", "7", "f1-avaliacao-2");
-    const result = await turn(store, "aluno-a", "fiz 3 vezes 2 mais 1", "f1-avaliacao-2");
+    for (const exercise of EXERCISES) await turn(store, "aluno-a", exercise.answer, exercise.id);
+    const last = EXERCISES[EXERCISES.length - 1].id;
+    const result = await turn(store, "aluno-a", "fiz a conta passo a passo", last);
     expect(result.resposta_ao_aluno).toContain("todos os exercícios");
-    expect(result.exerciseId).toBe("f1-avaliacao-2");
+    expect(result.exerciseId).toBe(last);
+  });
+
+  it("pula exercícios já resolvidos ao propor o próximo", async () => {
+    const store = createMemoryAttemptsStore();
+    await turn(store, "aluno-a", "7", "f1-avaliacao-2");
+    await turn(store, "aluno-a", RIGHT);
+    const result = await turn(store, "aluno-a", "multipliquei e somei", EXERCISE);
+    expect(result.exerciseId).toBe("f1-avaliacao-3");
+  });
+
+  it("todos os exercícios têm resposta que o juiz aceita e passos que terminam na resposta", () => {
+    for (const exercise of EXERCISES) {
+      expect(isCorrectAnswer(exercise.answer, exercise.answer)).toBe(true);
+      expect(exercise.steps.at(-1)).toMatch(new RegExp(`= ${exercise.answer}\\.$`));
+    }
   });
 
   it("marca o exercício como revelado na explicação, e um acerto depois disso continua marcado", async () => {

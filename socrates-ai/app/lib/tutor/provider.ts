@@ -51,7 +51,7 @@ export class StubProvider implements TutorProvider {
         `Agora tenta um parecido: ${next.statement}`,
       ].join("\n");
     }
-    const hints = [
+    const hints = exercise.hints ?? [
       "O que a expressão pede: trocar x pelo valor dado. Qual valor você colocaria no lugar de x?",
       "Pensa na ordem das operações: o que você calcula primeiro, a multiplicação ou a soma?",
       "Tenta escrever a conta inteira no caderno, com cada passo separado. Onde ela muda de cara?",

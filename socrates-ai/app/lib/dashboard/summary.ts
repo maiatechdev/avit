@@ -5,7 +5,7 @@ export const PATHS = ["investigar", "criar", "resolver", "colaborar"] as const;
 export type PathId = (typeof PATHS)[number];
 
 // Abaixo deste número de alunos, percentuais falam de uma ou duas pessoas e não representam a turma.
-export const MIN_RESPONSES = 5;
+export const MIN_RESPONSES = 3;
 
 export type DashboardRaw = {
   students: number;

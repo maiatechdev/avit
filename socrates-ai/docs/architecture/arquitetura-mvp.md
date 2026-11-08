@@ -55,7 +55,7 @@ Criado sob demanda pelas próprias funções (`CREATE TABLE IF NOT EXISTS`); mig
 - `participant_attempts(session_id, participant_id, exercise_id, wrong_count, solved, revealed, updated_at)`
 - `rate_limits(key PK, hits, window_start)`: a chave leva o hash do IP ou o id do participante, nunca o IP em texto.
 
-O painel lê só agregados por sessão e só conta quem fez check-in. Não há tabela de reflexões: a reflexão não é enviada.
+O painel lê só agregados por sessão, só conta quem fez check-in e mostra percentuais a partir de 3 alunos. Não há tabela de reflexões: a reflexão não é enviada.
 
 ## 5. Erros, limites e retenção
 
@@ -70,7 +70,7 @@ O painel lê só agregados por sessão e só conta quem fez check-in. Não há t
 | Risco | Impacto | Mitigação |
 |---|---|---|
 | Limite do plano gratuito do Gemini | Demo para no meio | Limite de turnos por aluno e por sessão; testar o roteiro inteiro antes |
-| Termos do Gemini vedam menores | Uso com alunos reais fica proibido | Decisão de 2026-11-02: protótipo só para a banca, com o Gemini mantido; trocar de provedor antes de qualquer uso com alunos |
+| Termos do Gemini vedam menores | Turmas com menores ficam proibidas | Decisão de 2026-11-08: Gemini na banca e no teste com cinco estudantes maiores de 18 anos; trocar de provedor antes de turmas com menores |
 | Cold start das funções | Primeira resposta lenta | Aquecer a função antes da apresentação |
 | IA devolver a resposta pronta | Quebra do princípio socrático | Validação no servidor do formato e teste automatizado da escada de dicas |
 | Persistência sem configurar | Dados perdidos entre chamadas | Banco definido na Story 1.1 antes de qualquer tela depender dele |

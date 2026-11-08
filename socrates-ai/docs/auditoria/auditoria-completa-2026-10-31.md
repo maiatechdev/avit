@@ -202,6 +202,6 @@ Nenhuma correção de código foi feita nesta rodada.
 
 ## 8. Decisões tomadas
 
-1. **Provedor de IA (2026-11-02): manter o Gemini.** O protótipo será usado só na apresentação para a banca, com adultos, e não com alunos reais. O P0-1 fica aceito para esse escopo. Uso com alunos reais exige trocar de provedor antes.
+1. **Provedor de IA: manter o Gemini.** Em 2026-11-02, o uso era só na banca. Em 2026-11-08, passou a incluir um teste com cinco estudantes do Ensino Médio, todos com 18 anos ou mais. O P0-1 fica aceito para esse escopo; turmas com menores exigem trocar de provedor.
 2. **Reflexão (Story 4.1):** a promessa saiu da tela; gravar continua fora do escopo.
 3. **Trilhas (Story 4.1):** a copy foi reescrita para descrever o jeito de pensar.

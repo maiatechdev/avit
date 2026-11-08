@@ -5,7 +5,7 @@ import { SceneInvestigar, SceneCriar, SceneResolver, SceneColaborar, SceneReflec
 import type { Session, Path, Message, DashboardData } from "./shared/contracts";
 import { apiCreateSession, apiEraseSession, apiJoinSession, postJson, getRequest, clearLegacyCredentials } from "./api/client";
 import { codeFromSearch, entryFor, needsSession, ROUTES, screenFromPath, type Screen } from "./shared/routes";
-import { findExercise } from "../lib/tutor/escada";
+import { EXERCISES, findExercise } from "../lib/tutor/escada";
 import QRCode from "qrcode";
 import logoSocratesAi from "@/imports/logoSocratesAi.svg";
 
@@ -666,15 +666,45 @@ function StudentFocus({ onBack, onContinue }: { onBack: () => void; onContinue: 
 const EXERCISE_ID = "f1-avaliacao-1";
 const DEFAULT_MISSION = "Vamos pensar juntos.";
 
+// A conversa fica guardada neste aparelho, por sessão: recarregar a página ou voltar de outra tela
+// não leva o aluno de volta ao primeiro exercício. O progresso que conta para o painel fica no servidor.
+type SavedChat = { messages: Message[]; exerciseId: string; level: number };
+const chatKey = (sessionId: string) => `socrates-chat:${sessionId}`;
+
+function loadChat(sessionId: string): SavedChat | null {
+  try {
+    const raw = localStorage.getItem(chatKey(sessionId));
+    const chat = raw ? (JSON.parse(raw) as SavedChat) : null;
+    return chat && Array.isArray(chat.messages) && findExercise(chat.exerciseId) ? chat : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveChat(sessionId: string, chat: SavedChat | null): void {
+  try {
+    if (chat) localStorage.setItem(chatKey(sessionId), JSON.stringify(chat));
+    else localStorage.removeItem(chatKey(sessionId));
+  } catch {
+    // Sem armazenamento, a conversa só não sobrevive a uma recarga.
+  }
+}
+
 function StudentChat({ sessionId, objective, mission, path, focusActive: initFocus, focusSecs: initSecs, onBack, onFinish }: { sessionId: string; objective: string; mission: string | null; path: Path; focusActive: boolean; focusSecs: number; onBack: () => void; onFinish: () => void }) {
-  const [messages, setMessages] = useState<Message[]>([
+  const [saved] = useState(() => loadChat(sessionId));
+  const [messages, setMessages] = useState<Message[]>(saved?.messages ?? [
     { role: "ai", text: `Oi! ${mission ?? DEFAULT_MISSION} Se f(x) = 2x + 3, quanto vale f(4)? Me conta como você pensaria para resolver.` },
   ]);
   const [input, setInput] = useState("");
-  const [level, setLevel] = useState(1);
+  const [level, setLevel] = useState(saved?.level ?? 1);
   const [sending, setSending] = useState(false);
-  const [exerciseId, setExerciseId] = useState(EXERCISE_ID);
+  const [exerciseId, setExerciseId] = useState(saved?.exerciseId ?? EXERCISE_ID);
   const [confirmEnd, setConfirmEnd] = useState(false);
+  const exerciseNumber = EXERCISES.findIndex((exercise) => exercise.id === exerciseId) + 1;
+
+  useEffect(() => {
+    saveChat(sessionId, { messages, exerciseId, level });
+  }, [sessionId, messages, exerciseId, level]);
 
   const [focusOn, setFocusOn] = useState(initFocus);
   const [secsLeft, setSecsLeft] = useState(initSecs);
@@ -745,7 +775,7 @@ function StudentChat({ sessionId, objective, mission, path, focusActive: initFoc
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold mb-0.5" style={{ color: "var(--muted-foreground)" }}>{pathLabel} · {objective}</p>
-              <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>Nível de raciocínio: {level}/3</p>
+              <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>Exercício {exerciseNumber} de {EXERCISES.length} · Nível de raciocínio: {level}/3</p>
             </div>
             <div className="flex items-center gap-2">
               {focusOn ? (
@@ -851,7 +881,7 @@ function StudentChat({ sessionId, objective, mission, path, focusActive: initFoc
             <p className="text-lg font-extrabold" style={{ color: "var(--foreground)" }}>{pathLabel}</p>
           </div>
           <div className="cartoon-card p-5">
-            <p className="text-xs font-extrabold mb-1" style={{ color: "var(--muted-foreground)" }}>EXERCÍCIO DE HOJE</p>
+            <p className="text-xs font-extrabold mb-1" style={{ color: "var(--muted-foreground)" }}>EXERCÍCIO {exerciseNumber} DE {EXERCISES.length}</p>
             <p className="text-base font-bold" style={{ color: "var(--foreground)" }}>{findExercise(exerciseId)?.statement ?? ""}</p>
           </div>
           <div className="cartoon-card p-5">
@@ -1307,7 +1337,7 @@ export default function App() {
       {screen === "student-focus"      && <StudentFocus onBack={() => go("student-paths")} onContinue={handleFocusContinue} />}
       {screen === "student-chat"       && <StudentChat sessionId={session?.id ?? "sem-sessao"} objective={session?.objective ?? ""} mission={mission} path={path} focusActive={focusActive} focusSecs={focusSecs} onBack={() => go("student-focus")} onFinish={() => go("student-reflection")} />}
       {/* Ao terminar, o aluno volta à entrada: o painel é só do professor. */}
-      {screen === "student-reflection" && <StudentReflection onSend={() => { saveState(null); setSession(null); go("intro"); }} />}
+      {screen === "student-reflection" && <StudentReflection onSend={() => { if (session) saveChat(session.id, null); saveState(null); setSession(null); go("intro"); }} />}
       {screen === "teacher-dashboard"  && <TeacherDashboard session={session} onBack={() => go("teacher-activated")} onNewSession={() => go("teacher-activate")} onErased={() => { saveState(null); setSession(null); go("intro"); }} />}
     </div>
   );
